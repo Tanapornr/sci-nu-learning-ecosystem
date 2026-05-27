@@ -17,12 +17,66 @@ const SHEETS = {
 
 const HEADERS = {
   users: ["userId", "name", "position", "progress", "score"],
-  courses: ["courseId", "userId", "title", "category", "status", "progress", "hours"],
+  courses: ["courseId", "userId", "title", "category", "status", "progress", "hours", "level"],
   prompts: ["promptId", "title", "category", "uses"],
   activities: ["activityId", "title", "type", "date", "time"],
   badges: ["badgeId", "name", "description", "status", "earnedDate"],
   community: ["postId", "title", "type", "author", "createdAt"],
   tools: ["toolId", "title", "category", "uses", "url"],
+};
+
+const SEED_DATA = {
+  users: [
+    ["U001", "ผู้เรียนใหม่", "บุคลากรสายสนับสนุน", 0, 0],
+  ],
+  courses: [
+    ["C001", "", "ทักษะดิจิทัลพื้นฐานสำหรับบุคลากรสายสนับสนุน", "ทักษะดิจิทัล", "เปิดลงทะเบียน", 0, 3, "พื้นฐาน"],
+    ["C002", "", "การใช้ Google Workspace เพื่อการทำงานร่วมกัน", "เครื่องมือสำนักงาน", "เปิดลงทะเบียน", 0, 4, "พื้นฐาน"],
+    ["C003", "", "Excel สำหรับงานธุรการและการวิเคราะห์ข้อมูลเบื้องต้น", "Data & Excel", "เปิดลงทะเบียน", 0, 5, "พื้นฐาน"],
+    ["C004", "", "การจัดการเอกสารดิจิทัลและ e-Document", "งานเอกสาร", "เปิดลงทะเบียน", 0, 3, "พื้นฐาน"],
+    ["C005", "", "AI Literacy: เข้าใจ AI และใช้อย่างปลอดภัย", "การใช้ AI", "เปิดลงทะเบียน", 0, 2, "พื้นฐาน"],
+    ["C006", "", "การเขียน Prompt สำหรับงานสำนักงาน", "Prompt Engineering", "เปิดลงทะเบียน", 0, 3, "พื้นฐาน"],
+    ["C007", "", "AI ช่วยสรุปเอกสาร รายงาน และการประชุม", "การใช้ AI", "เปิดลงทะเบียน", 0, 4, "กลาง"],
+    ["C008", "", "การใช้ AI ช่วยร่างหนังสือราชการและอีเมล", "งานเอกสาร", "เปิดลงทะเบียน", 0, 3, "กลาง"],
+    ["C009", "", "การสร้างสื่อประชาสัมพันธ์ด้วย Canva และ AI", "สื่อสารองค์กร", "เปิดลงทะเบียน", 0, 4, "พื้นฐาน"],
+    ["C010", "", "Power BI เบื้องต้นสำหรับ Dashboard งานสนับสนุน", "Data Dashboard", "เปิดลงทะเบียน", 0, 6, "กลาง"],
+    ["C011", "", "Cybersecurity Awareness สำหรับการทำงานประจำวัน", "ความปลอดภัยดิจิทัล", "เปิดลงทะเบียน", 0, 2, "พื้นฐาน"],
+    ["C012", "", "การวางแผนงานและติดตามงานด้วยเครื่องมือดิจิทัล", "Productivity", "เปิดลงทะเบียน", 0, 3, "พื้นฐาน"],
+  ],
+  prompts: [
+    ["P001", "สรุปรายงานการประชุมเป็นมติและงานติดตาม", "สรุปเอกสาร", 0],
+    ["P002", "ร่างหนังสือราชการด้วยภาษาสุภาพ", "งานเอกสาร", 0],
+    ["P003", "วิเคราะห์ตาราง Excel และสรุป Insight", "Excel & Data", 0],
+    ["P004", "สร้างแผนงานรายสัปดาห์สำหรับทีมสนับสนุน", "Productivity", 0],
+    ["P005", "ตรวจแก้ภาษาไทยในอีเมลราชการ", "สื่อสารองค์กร", 0],
+    ["P006", "ออกแบบโครงสไลด์นำเสนอผลการดำเนินงาน", "งานนำเสนอ", 0],
+  ],
+  activities: [
+    ["A001", "ปฐมนิเทศระบบ SCI NU Learning Ecosystem", "ออนไลน์", "กำหนดภายหลัง", "09:00 - 10:00"],
+    ["A002", "Workshop: AI Literacy สำหรับงานสนับสนุน", "อบรม", "กำหนดภายหลัง", "13:30 - 15:30"],
+    ["A003", "Clinic: ถามตอบการใช้ Google Sheet เป็นฐานข้อมูล", "ถามตอบ", "กำหนดภายหลัง", "10:00 - 11:00"],
+  ],
+  badges: [
+    ["B001", "Digital Starter", "เริ่มเรียนคอร์สทักษะดิจิทัลคอร์สแรก", "ยังไม่ได้รับ", ""],
+    ["B002", "AI Explorer", "เรียนรู้คอร์ส AI Literacy สำเร็จ", "ยังไม่ได้รับ", ""],
+    ["B003", "Prompt Beginner", "ผ่านคอร์สการเขียน Prompt สำหรับงานสำนักงาน", "ยังไม่ได้รับ", ""],
+    ["B004", "Data Ready", "เรียนคอร์ส Excel หรือ Dashboard สำเร็จ", "ยังไม่ได้รับ", ""],
+    ["B005", "Work Smart", "เรียนครบ 3 คอร์สในหมวด Productivity หรือเครื่องมือสำนักงาน", "ยังไม่ได้รับ", ""],
+    ["B006", "Support Innovator", "ส่งผลงานประยุกต์ใช้ AI กับงานจริง", "ยังไม่ได้รับ", ""],
+  ],
+  community: [
+    ["CM001", "เริ่มต้นใช้ AI กับงานเอกสารอย่างไรให้ปลอดภัย", "แนวทาง", "ทีมพัฒนาระบบ", "พร้อมใช้งาน"],
+    ["CM002", "แบ่งปัน Prompt สำหรับสรุปรายงานประชุม", "Prompt", "ทีมพัฒนาระบบ", "พร้อมใช้งาน"],
+    ["CM003", "ถามตอบการจัดข้อมูลใน Google Sheet เพื่อทำ Dashboard", "ถามตอบ", "ทีมพัฒนาระบบ", "พร้อมใช้งาน"],
+  ],
+  tools: [
+    ["T001", "Google Workspace", "เอกสารและการทำงานร่วมกัน", 0, "#"],
+    ["T002", "Microsoft 365", "เอกสาร ตาราง และงานนำเสนอ", 0, "#"],
+    ["T003", "Google Sheet Database", "ฐานข้อมูลเบื้องต้น", 0, "#"],
+    ["T004", "AI Assistant", "ผู้ช่วยงานเอกสารและข้อมูล", 0, "aiasistant.html"],
+    ["T005", "Prompt Library", "คลังคำสั่ง AI", 0, "promptlibrary.html"],
+    ["T006", "Dashboard Template", "ติดตามงานและรายงานผล", 0, "#"],
+  ],
 };
 
 function setupDatabase() {
@@ -32,9 +86,12 @@ function setupDatabase() {
     if (!sheet) sheet = ss.insertSheet(sheetName);
     sheet.clear();
     sheet.getRange(1, 1, 1, HEADERS[sheetName].length).setValues([HEADERS[sheetName]]);
+    if (SEED_DATA[sheetName] && SEED_DATA[sheetName].length) {
+      sheet.getRange(2, 1, SEED_DATA[sheetName].length, HEADERS[sheetName].length).setValues(SEED_DATA[sheetName]);
+    }
     sheet.setFrozenRows(1);
   });
-  return "SCI NU Learning Ecosystem database is ready with empty tables.";
+  return "SCI NU Learning Ecosystem database is ready with catalog data. Learner progress remains zero.";
 }
 
 function doGet(e) {
@@ -89,22 +146,25 @@ function getDashboard(userId) {
   const badges = readObjects(SHEETS.badges);
   const activities = readObjects(SHEETS.activities);
   const user = users.find((item) => item.userId === userId) || users[0] || {};
-  const learning = courses.filter((item) => item.status === "กำลังเรียน");
-  const completed = courses.filter((item) => item.status === "เรียนจบแล้ว");
+  const enrollments = courses.filter((item) => item.userId === userId);
+  const learning = enrollments.filter((item) => item.status === "กำลังเรียน");
+  const completed = enrollments.filter((item) => item.status === "เรียนจบแล้ว");
+  const earnedBadges = badges.filter((item) => item.status === "ได้รับแล้ว" || item.earnedDate);
 
   return {
     user,
     stats: {
       learningCourses: learning.length,
       completedCourses: completed.length,
-      hours: sum(courses, "hours"),
-      progress: user.progress || average(courses, "progress"),
+      totalCourses: courses.filter((item) => !item.userId).length,
+      hours: sum(completed, "hours"),
+      progress: enrollments.length ? Math.round((completed.length / enrollments.length) * 100) : 0,
       score: user.score || 0,
-      badges: badges.length,
+      badges: earnedBadges.length,
     },
     learning,
-    recommended: courses.slice(0, 8),
-    badges: badges.slice(0, 8),
+    recommended: courses.filter((item) => !item.userId).slice(0, 8),
+    badges,
     activities: activities.slice(0, 8),
   };
 }
