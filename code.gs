@@ -5,7 +5,7 @@
  * Required sheet tabs:
  * users, courses, prompts, activities, badges, community, tools
  */
-const SPREADSHEET_ID = ""; // Optional: paste Google Sheet ID here when this script is not bound to a Sheet.
+const SPREADSHEET_ID = "1_4DoVqYQ_S2_E80C957b8InpTOXbMn6ZoJa3h0407K4"; // Optional: paste Google Sheet ID here when this script is not bound to a Sheet.
 
 const SHEETS = {
   users: "users",
