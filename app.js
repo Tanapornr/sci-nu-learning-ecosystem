@@ -18,14 +18,14 @@ const DEFAULT_DATA = {
     { userId: "U001", name: "ผู้เรียนใหม่", position: "บุคลากรสายสนับสนุน", progress: 0, score: 0 },
   ],
   courses: [
-    { courseId: "C001", title: "ทักษะดิจิทัลพื้นฐานสำหรับบุคลากรสายสนับสนุน", category: "ทักษะดิจิทัล", status: "เปิดลงทะเบียน", progress: 0, hours: 3, level: "พื้นฐาน" },
+    { courseId: "C001", title: "ทักษะดิจิทัลพื้นฐานสำหรับบุคลากรสายสนับสนุน", category: "ทักษะดิจิทัล", status: "เปิดลงทะเบียน", progress: 0, hours: 3, level: "พื้นฐาน", videoId: "aircAruvnKk", videoUrl: "https://www.youtube.com/watch?v=aircAruvnKk" },
     { courseId: "C002", title: "การใช้ Google Workspace เพื่อการทำงานร่วมกัน", category: "เครื่องมือสำนักงาน", status: "เปิดลงทะเบียน", progress: 0, hours: 4, level: "พื้นฐาน" },
     { courseId: "C003", title: "Excel สำหรับงานธุรการและการวิเคราะห์ข้อมูลเบื้องต้น", category: "Data & Excel", status: "เปิดลงทะเบียน", progress: 0, hours: 5, level: "พื้นฐาน" },
     { courseId: "C004", title: "การจัดการเอกสารดิจิทัลและ e-Document", category: "งานเอกสาร", status: "เปิดลงทะเบียน", progress: 0, hours: 3, level: "พื้นฐาน" },
-    { courseId: "C005", title: "AI Literacy: เข้าใจ AI และใช้อย่างปลอดภัย", category: "การใช้ AI", status: "เปิดลงทะเบียน", progress: 0, hours: 2, level: "พื้นฐาน" },
-    { courseId: "C006", title: "การเขียน Prompt สำหรับงานสำนักงาน", category: "Prompt Engineering", status: "เปิดลงทะเบียน", progress: 0, hours: 3, level: "พื้นฐาน" },
-    { courseId: "C007", title: "AI ช่วยสรุปเอกสาร รายงาน และการประชุม", category: "การใช้ AI", status: "เปิดลงทะเบียน", progress: 0, hours: 4, level: "กลาง" },
-    { courseId: "C008", title: "การใช้ AI ช่วยร่างหนังสือราชการและอีเมล", category: "งานเอกสาร", status: "เปิดลงทะเบียน", progress: 0, hours: 3, level: "กลาง" },
+    { courseId: "C005", title: "AI Literacy: เข้าใจ AI และใช้อย่างปลอดภัย", category: "การใช้ AI", status: "เปิดลงทะเบียน", progress: 0, hours: 2, level: "พื้นฐาน", videoId: "aircAruvnKk", videoUrl: "https://www.youtube.com/watch?v=aircAruvnKk" },
+    { courseId: "C006", title: "การเขียน Prompt สำหรับงานสำนักงาน", category: "Prompt Engineering", status: "เปิดลงทะเบียน", progress: 0, hours: 3, level: "พื้นฐาน", videoId: "kCc8FmEb1nY", videoUrl: "https://www.youtube.com/watch?v=kCc8FmEb1nY" },
+    { courseId: "C007", title: "AI ช่วยสรุปเอกสาร รายงาน และการประชุม", category: "การใช้ AI", status: "เปิดลงทะเบียน", progress: 0, hours: 4, level: "กลาง", videoId: "aircAruvnKk", videoUrl: "https://www.youtube.com/watch?v=aircAruvnKk" },
+    { courseId: "C008", title: "การใช้ AI ช่วยร่างหนังสือราชการและอีเมล", category: "งานเอกสาร", status: "เปิดลงทะเบียน", progress: 0, hours: 3, level: "กลาง", videoId: "kCc8FmEb1nY", videoUrl: "https://www.youtube.com/watch?v=kCc8FmEb1nY" },
     { courseId: "C009", title: "การสร้างสื่อประชาสัมพันธ์ด้วย Canva และ AI", category: "สื่อสารองค์กร", status: "เปิดลงทะเบียน", progress: 0, hours: 4, level: "พื้นฐาน" },
     { courseId: "C010", title: "Power BI เบื้องต้นสำหรับ Dashboard งานสนับสนุน", category: "Data Dashboard", status: "เปิดลงทะเบียน", progress: 0, hours: 6, level: "กลาง" },
     { courseId: "C011", title: "Cybersecurity Awareness สำหรับการทำงานประจำวัน", category: "ความปลอดภัยดิจิทัล", status: "เปิดลงทะเบียน", progress: 0, hours: 2, level: "พื้นฐาน" },
@@ -217,6 +217,16 @@ function sendSheetAction(action, params = {}) {
   jsonp(APP_CONFIG.appsScriptUrl, { action, userId: APP_CONFIG.userId, ...params }).catch((err) => {
     console.warn(err.message);
   });
+}
+
+async function setupSheetDatabase() {
+  if (!APP_CONFIG.appsScriptUrl) {
+    alert("กรุณาวาง Apps Script Web App URL ก่อน");
+    return;
+  }
+  const result = await jsonp(APP_CONFIG.appsScriptUrl, { action: "setup" });
+  alert(result && result.success ? "สร้างข้อมูล Google Sheet เรียบร้อยแล้ว" : "สร้างข้อมูลไม่สำเร็จ โปรดตรวจสิทธิ์ Apps Script");
+  window.location.reload();
 }
 
 function withDefaults(data) {
@@ -433,7 +443,7 @@ function renderBadge() {
 function renderSettings() {
   return `${header("settings.html")}
     <section class="grid-2">
-      <div class="panel"><h3>เชื่อมต่อ Google Sheet</h3><p class="muted">วาง URL Web App จาก Apps Script เพื่อให้ทุกหน้าดึงข้อมูลจริงจาก Google Sheet</p><form id="settingsForm" class="settings-form"><input id="appsScriptUrl" class="input" placeholder="https://script.google.com/macros/s/.../exec" /><button class="btn primary" type="submit">บันทึกและทดสอบ</button><span id="settingsStatus" class="muted small">ยังไม่ได้ทดสอบการเชื่อมต่อ</span></form></div>
+      <div class="panel"><h3>เชื่อมต่อ Google Sheet</h3><p class="muted">วาง URL Web App จาก Apps Script เพื่อให้ทุกหน้าดึงข้อมูลจริงจาก Google Sheet</p><form id="settingsForm" class="settings-form"><input id="appsScriptUrl" class="input" placeholder="https://script.google.com/macros/s/.../exec" /><button class="btn primary" type="submit">บันทึกและทดสอบ</button><button class="btn" type="button" id="setupSheetButton">สร้าง/เติมข้อมูล Google Sheet</button><span id="settingsStatus" class="muted small">ยังไม่ได้ทดสอบการเชื่อมต่อ</span></form></div>
       <div class="panel"><h3>สถานะเริ่มต้นของผู้เรียน</h3><ul class="list"><li class="row">คะแนนเริ่มต้น <strong>0</strong></li><li class="row">ชั่วโมงเรียนเริ่มต้น <strong>0</strong></li><li class="row">คอร์สที่จบแล้ว <strong>0</strong></li><li class="row">Badge ที่ได้รับ <strong>0</strong></li><li class="row">คลังคอร์สพร้อมใช้งาน <strong>${catalogCourses().length}</strong></li></ul></div>
     </section>`;
 }
@@ -451,11 +461,13 @@ function renderLearn() {
     { title: `บทนำ: ${course.title}`, duration: "15 นาที", query: `${course.title} ภาษาไทย` },
     { title: "แนวทางประยุกต์ใช้กับงานจริง", duration: "20 นาที", query: `${course.category} สำหรับการทำงาน` },
   ];
-  const firstQuery = encodeURIComponent(lessons[0].query);
+  const video = course.videoId
+    ? `<div class="video-frame"><iframe title="learning video" src="https://www.youtube.com/embed/${course.videoId}?rel=0" allowfullscreen></iframe></div>`
+    : `<div class="video-resource"><h3>วิดีโอเรียนรู้จาก YouTube</h3><p class="muted">คอร์สนี้ยังไม่ได้กำหนด videoId สำหรับฝังวิดีโอโดยตรง กดปุ่มด้านล่างเพื่อเปิดรายการวิดีโอที่ตรงกับเนื้อหา</p><a class="btn primary" target="_blank" rel="noopener" href="${course.videoUrl || `https://www.youtube.com/results?search_query=${encodeURIComponent(course.title)}`}">เปิดวิดีโอ YouTube</a></div>`;
   return `${header("learn.html")}
     <section class="layout-main">
       <div class="stack">
-        <div class="panel"><div class="panel-head"><h3>${course.title}</h3><span class="pill">${course.progress || 0}%</span></div><div class="video-frame"><iframe title="learning video" src="https://www.youtube.com/embed?listType=search&list=${firstQuery}" allowfullscreen></iframe></div><p class="muted">ระบบเปิดวิดีโอจากคำค้นที่ตรงกับบทเรียน หากต้องการใช้วิดีโอขององค์กร ให้ใส่ YouTube embed URL ใน Google Sheet เพิ่มภายหลังได้</p></div>
+        <div class="panel"><div class="panel-head"><h3>${course.title}</h3><span class="pill">${course.progress || 0}%</span></div>${video}<p class="muted">ข้อมูลวิดีโอเก็บในคอลัมน์ videoId และ videoUrl ของ Google Sheet เพื่อให้อาจารย์ตรวจหลังบ้านได้</p></div>
         ${panel("บทเรียน", `<ul class="list">${lessons.map((lesson, index) => `<li class="row"><span>${index + 1}. ${lesson.title}</span><span class="pill">${lesson.duration}</span></li>`).join("")}</ul>`)}
       </div>
       <aside class="stack">${panel("ความก้าวหน้าคอร์สนี้", `${progressBar(course.progress || 0)}<p class="muted">กดปุ่มด้านล่างเพื่อจำลองการเรียนจบบทเรียน ระบบจะบันทึกในเครื่องผู้ใช้ทันที</p><button class="btn primary" type="button" data-complete-lesson="${course.courseId}">เรียนจบบทเรียนนี้</button>`)}${panel("เครื่องมือช่วยเรียน", `<a class="btn" href="aiasistant.html">ถาม AI Assistant</a><a class="btn" href="mylearning.html">กลับไปคอร์สของฉัน</a>`)}</aside>
@@ -495,6 +507,8 @@ function bindSettingsForm() {
       ? "เชื่อมต่อ Google Sheet สำเร็จ"
       : "บันทึกแล้ว แต่ยังเชื่อมต่อไม่ได้ โปรดตรวจ URL และสิทธิ์ Web App";
   });
+  const setupButton = document.getElementById("setupSheetButton");
+  if (setupButton) setupButton.addEventListener("click", setupSheetDatabase);
 }
 
 function startCourse(courseId) {
@@ -548,6 +562,7 @@ function bindLoginForm() {
       score: 0,
     };
     localStorage.setItem(AUTH_KEY, JSON.stringify(user));
+    sendSheetAction("logLogin", { timestamp: new Date().toISOString(), name: user.name, position: user.position });
     window.location.href = "dashboard.html";
   });
 }
@@ -579,7 +594,10 @@ function bindAiChat() {
     const text = input.value.trim();
     if (!text) return;
     history.push({ role: "user", text });
-    history.push({ role: "ai", text: aiReply(text) });
+    sendSheetAction("logChat", { timestamp: new Date().toISOString(), role: "user", message: text });
+    const reply = aiReply(text);
+    history.push({ role: "ai", text: reply });
+    sendSheetAction("logChat", { timestamp: new Date().toISOString(), role: "ai", message: reply });
     localStorage.setItem(CHAT_KEY, JSON.stringify(history));
     input.value = "";
     render();

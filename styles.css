@@ -568,6 +568,23 @@ body:not(.app-ready) .content {
   border: 0;
 }
 
+.video-resource {
+  display: grid;
+  place-items: center;
+  gap: 12px;
+  min-height: 360px;
+  padding: 24px;
+  border-radius: 8px;
+  background: #111936;
+  color: #fff;
+  text-align: center;
+}
+
+.video-resource .muted {
+  max-width: 560px;
+  color: rgba(255, 255, 255, .72);
+}
+
 .chat-messages {
   display: flex;
   flex-direction: column;

@@ -63,6 +63,14 @@
 
 ถ้ายังไม่ได้ใส่ Apps Script URL ระบบจะบันทึกข้อมูลการเรียนไว้ใน `localStorage` ของเครื่องผู้ใช้ก่อน เมื่อใส่ Apps Script URL แล้วการเริ่มเรียนและอัปเดตความก้าวหน้าจะส่งไปยัง Google Sheet ด้วย
 
+## เติมข้อมูลหลังบ้าน
+1. เปิดหน้า `settings.html`
+2. วาง Apps Script Web App URL
+3. กด `บันทึกและทดสอบ`
+4. กด `สร้าง/เติมข้อมูล Google Sheet`
+
+ระบบจะสร้างชีต `users`, `courses`, `prompts`, `activities`, `badges`, `community`, `tools`, `login_logs`, และ `chat_logs` พร้อมข้อมูลคอร์สและคอลัมน์ `videoId`, `videoUrl` สำหรับให้อาจารย์ตรวจหลังบ้าน
+
 ## Deploy Vercel
 1. Push โค้ดไป GitHub repository
 2. เข้า Vercel > Add New Project > Import จาก GitHub

@@ -17,12 +17,14 @@ const SHEETS = {
 
 const HEADERS = {
   users: ["userId", "name", "position", "progress", "score"],
-  courses: ["courseId", "userId", "title", "category", "status", "progress", "hours", "level"],
+  courses: ["courseId", "userId", "title", "category", "status", "progress", "hours", "level", "videoId", "videoUrl"],
   prompts: ["promptId", "title", "category", "uses"],
   activities: ["activityId", "title", "type", "date", "time"],
   badges: ["badgeId", "name", "description", "status", "earnedDate"],
   community: ["postId", "title", "type", "author", "createdAt"],
   tools: ["toolId", "title", "category", "uses", "url"],
+  login_logs: ["timestamp", "userId", "name", "position"],
+  chat_logs: ["timestamp", "userId", "role", "message"],
 };
 
 const SEED_DATA = {
@@ -30,18 +32,18 @@ const SEED_DATA = {
     ["U001", "ผู้เรียนใหม่", "บุคลากรสายสนับสนุน", 0, 0],
   ],
   courses: [
-    ["C001", "", "ทักษะดิจิทัลพื้นฐานสำหรับบุคลากรสายสนับสนุน", "ทักษะดิจิทัล", "เปิดลงทะเบียน", 0, 3, "พื้นฐาน"],
-    ["C002", "", "การใช้ Google Workspace เพื่อการทำงานร่วมกัน", "เครื่องมือสำนักงาน", "เปิดลงทะเบียน", 0, 4, "พื้นฐาน"],
-    ["C003", "", "Excel สำหรับงานธุรการและการวิเคราะห์ข้อมูลเบื้องต้น", "Data & Excel", "เปิดลงทะเบียน", 0, 5, "พื้นฐาน"],
-    ["C004", "", "การจัดการเอกสารดิจิทัลและ e-Document", "งานเอกสาร", "เปิดลงทะเบียน", 0, 3, "พื้นฐาน"],
-    ["C005", "", "AI Literacy: เข้าใจ AI และใช้อย่างปลอดภัย", "การใช้ AI", "เปิดลงทะเบียน", 0, 2, "พื้นฐาน"],
-    ["C006", "", "การเขียน Prompt สำหรับงานสำนักงาน", "Prompt Engineering", "เปิดลงทะเบียน", 0, 3, "พื้นฐาน"],
-    ["C007", "", "AI ช่วยสรุปเอกสาร รายงาน และการประชุม", "การใช้ AI", "เปิดลงทะเบียน", 0, 4, "กลาง"],
-    ["C008", "", "การใช้ AI ช่วยร่างหนังสือราชการและอีเมล", "งานเอกสาร", "เปิดลงทะเบียน", 0, 3, "กลาง"],
-    ["C009", "", "การสร้างสื่อประชาสัมพันธ์ด้วย Canva และ AI", "สื่อสารองค์กร", "เปิดลงทะเบียน", 0, 4, "พื้นฐาน"],
-    ["C010", "", "Power BI เบื้องต้นสำหรับ Dashboard งานสนับสนุน", "Data Dashboard", "เปิดลงทะเบียน", 0, 6, "กลาง"],
-    ["C011", "", "Cybersecurity Awareness สำหรับการทำงานประจำวัน", "ความปลอดภัยดิจิทัล", "เปิดลงทะเบียน", 0, 2, "พื้นฐาน"],
-    ["C012", "", "การวางแผนงานและติดตามงานด้วยเครื่องมือดิจิทัล", "Productivity", "เปิดลงทะเบียน", 0, 3, "พื้นฐาน"],
+    ["C001", "", "ทักษะดิจิทัลพื้นฐานสำหรับบุคลากรสายสนับสนุน", "ทักษะดิจิทัล", "เปิดลงทะเบียน", 0, 3, "พื้นฐาน", "aircAruvnKk", "https://www.youtube.com/watch?v=aircAruvnKk"],
+    ["C002", "", "การใช้ Google Workspace เพื่อการทำงานร่วมกัน", "เครื่องมือสำนักงาน", "เปิดลงทะเบียน", 0, 4, "พื้นฐาน", "", "https://www.youtube.com/results?search_query=Google+Workspace+%E0%B8%AA%E0%B8%AD%E0%B8%99%E0%B9%83%E0%B8%8A%E0%B9%89%E0%B8%87%E0%B8%B2%E0%B8%99+%E0%B8%A0%E0%B8%B2%E0%B8%A9%E0%B8%B2%E0%B9%84%E0%B8%97%E0%B8%A2"],
+    ["C003", "", "Excel สำหรับงานธุรการและการวิเคราะห์ข้อมูลเบื้องต้น", "Data & Excel", "เปิดลงทะเบียน", 0, 5, "พื้นฐาน", "", "https://www.youtube.com/results?search_query=Excel+PivotTable+%E0%B8%9E%E0%B8%B7%E0%B9%89%E0%B8%99%E0%B8%90%E0%B8%B2%E0%B8%99+%E0%B8%A0%E0%B8%B2%E0%B8%A9%E0%B8%B2%E0%B9%84%E0%B8%97%E0%B8%A2"],
+    ["C004", "", "การจัดการเอกสารดิจิทัลและ e-Document", "งานเอกสาร", "เปิดลงทะเบียน", 0, 3, "พื้นฐาน", "", "https://www.youtube.com/results?search_query=%E0%B8%81%E0%B8%B2%E0%B8%A3%E0%B8%88%E0%B8%B1%E0%B8%94%E0%B8%81%E0%B8%B2%E0%B8%A3%E0%B9%80%E0%B8%AD%E0%B8%81%E0%B8%AA%E0%B8%B2%E0%B8%A3%E0%B8%94%E0%B8%B4%E0%B8%88%E0%B8%B4%E0%B8%97%E0%B8%B1%E0%B8%A5"],
+    ["C005", "", "AI Literacy: เข้าใจ AI และใช้อย่างปลอดภัย", "การใช้ AI", "เปิดลงทะเบียน", 0, 2, "พื้นฐาน", "aircAruvnKk", "https://www.youtube.com/watch?v=aircAruvnKk"],
+    ["C006", "", "การเขียน Prompt สำหรับงานสำนักงาน", "Prompt Engineering", "เปิดลงทะเบียน", 0, 3, "พื้นฐาน", "kCc8FmEb1nY", "https://www.youtube.com/watch?v=kCc8FmEb1nY"],
+    ["C007", "", "AI ช่วยสรุปเอกสาร รายงาน และการประชุม", "การใช้ AI", "เปิดลงทะเบียน", 0, 4, "กลาง", "aircAruvnKk", "https://www.youtube.com/watch?v=aircAruvnKk"],
+    ["C008", "", "การใช้ AI ช่วยร่างหนังสือราชการและอีเมล", "งานเอกสาร", "เปิดลงทะเบียน", 0, 3, "กลาง", "kCc8FmEb1nY", "https://www.youtube.com/watch?v=kCc8FmEb1nY"],
+    ["C009", "", "การสร้างสื่อประชาสัมพันธ์ด้วย Canva และ AI", "สื่อสารองค์กร", "เปิดลงทะเบียน", 0, 4, "พื้นฐาน", "", "https://www.youtube.com/results?search_query=Canva+AI+%E0%B8%A0%E0%B8%B2%E0%B8%A9%E0%B8%B2%E0%B9%84%E0%B8%97%E0%B8%A2"],
+    ["C010", "", "Power BI เบื้องต้นสำหรับ Dashboard งานสนับสนุน", "Data Dashboard", "เปิดลงทะเบียน", 0, 6, "กลาง", "", "https://www.youtube.com/results?search_query=Power+BI+%E0%B9%80%E0%B8%9A%E0%B8%B7%E0%B9%89%E0%B8%AD%E0%B8%87%E0%B8%95%E0%B9%89%E0%B8%99+%E0%B8%A0%E0%B8%B2%E0%B8%A9%E0%B8%B2%E0%B9%84%E0%B8%97%E0%B8%A2"],
+    ["C011", "", "Cybersecurity Awareness สำหรับการทำงานประจำวัน", "ความปลอดภัยดิจิทัล", "เปิดลงทะเบียน", 0, 2, "พื้นฐาน", "", "https://www.youtube.com/results?search_query=Cybersecurity+Awareness+%E0%B8%A0%E0%B8%B2%E0%B8%A9%E0%B8%B2%E0%B9%84%E0%B8%97%E0%B8%A2"],
+    ["C012", "", "การวางแผนงานและติดตามงานด้วยเครื่องมือดิจิทัล", "Productivity", "เปิดลงทะเบียน", 0, 3, "พื้นฐาน", "", "https://www.youtube.com/results?search_query=%E0%B8%A7%E0%B8%B2%E0%B8%87%E0%B9%81%E0%B8%9C%E0%B8%99%E0%B8%87%E0%B8%B2%E0%B8%99+digital+tools"],
   ],
   prompts: [
     ["P001", "สรุปรายงานการประชุมเป็นมติและงานติดตาม", "สรุปเอกสาร", 0],
@@ -77,6 +79,8 @@ const SEED_DATA = {
     ["T005", "Prompt Library", "คลังคำสั่ง AI", 0, "promptlibrary.html"],
     ["T006", "Dashboard Template", "ติดตามงานและรายงานผล", 0, "#"],
   ],
+  login_logs: [],
+  chat_logs: [],
 };
 
 function setupDatabase() {
@@ -113,6 +117,7 @@ function doPost(e) {
 function route(action, params) {
   try {
     if (action === "all") return ok(getAllData());
+    if (action === "setup") return ok(setupDatabase());
     if (action === "dashboard") return ok(getDashboard(params.userId || "U001"));
     if (action === "courses") return ok(readObjects(SHEETS.courses));
     if (action === "prompts") return ok(readObjects(SHEETS.prompts));
@@ -122,6 +127,8 @@ function route(action, params) {
     if (action === "tools") return ok(readObjects(SHEETS.tools));
     if (action === "startcourse") return ok(startCourse(params.userId || "U001", params.courseId));
     if (action === "updateprogress") return ok(updateProgress(params.userId || "U001", params.courseId, params.progress, params.status));
+    if (action === "loglogin") return ok(appendObject("login_logs", params));
+    if (action === "logchat") return ok(appendObject("chat_logs", params));
     if (action === "createactivity") return ok(appendObject(SHEETS.activities, params));
     if (action === "createcommunitypost") return ok(appendObject(SHEETS.community, params));
     return fail("Unknown action: " + action);
