@@ -5,6 +5,8 @@
  * Required sheet tabs:
  * users, courses, prompts, activities, badges, community, tools
  */
+const SPREADSHEET_ID = ""; // Optional: paste Google Sheet ID here when this script is not bound to a Sheet.
+
 const SHEETS = {
   users: "users",
   courses: "courses",
@@ -84,7 +86,7 @@ const SEED_DATA = {
 };
 
 function setupDatabase() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = getDatabase();
   Object.keys(HEADERS).forEach((sheetName) => {
     let sheet = ss.getSheetByName(sheetName);
     if (!sheet) sheet = ss.insertSheet(sheetName);
@@ -95,7 +97,11 @@ function setupDatabase() {
     }
     sheet.setFrozenRows(1);
   });
-  return "SCI NU Learning Ecosystem database is ready with catalog data. Learner progress remains zero.";
+  return {
+    message: "SCI NU Learning Ecosystem database is ready with catalog data. Learner progress remains zero.",
+    spreadsheetId: ss.getId(),
+    spreadsheetUrl: ss.getUrl(),
+  };
 }
 
 function doGet(e) {
@@ -179,7 +185,7 @@ function getDashboard(userId) {
 }
 
 function startCourse(userId, courseId) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.courses);
+  const sheet = getDatabase().getSheetByName(SHEETS.courses);
   if (!sheet) throw new Error("Missing sheet: courses");
   const courses = readObjects(SHEETS.courses);
   const catalog = courses.find((item) => item.courseId === courseId && !item.userId);
@@ -195,12 +201,14 @@ function startCourse(userId, courseId) {
     0,
     catalog.hours,
     catalog.level,
+    catalog.videoId,
+    catalog.videoUrl,
   ]);
   return { enrolled: true };
 }
 
 function updateProgress(userId, courseId, progress, status) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.courses);
+  const sheet = getDatabase().getSheetByName(SHEETS.courses);
   if (!sheet) throw new Error("Missing sheet: courses");
   const values = sheet.getDataRange().getDisplayValues();
   const headers = values[0];
@@ -219,7 +227,7 @@ function updateProgress(userId, courseId, progress, status) {
 }
 
 function readObjects(sheetName) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+  const sheet = getDatabase().getSheetByName(sheetName);
   if (!sheet) return [];
   const values = sheet.getDataRange().getDisplayValues();
   if (values.length < 2) return [];
@@ -235,12 +243,21 @@ function readObjects(sheetName) {
 }
 
 function appendObject(sheetName, data) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+  const sheet = getDatabase().getSheetByName(sheetName);
   if (!sheet) throw new Error("Missing sheet: " + sheetName);
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getDisplayValues()[0];
   const row = headers.map((header) => data[header] || "");
   sheet.appendRow(row);
   return { inserted: true, row };
+}
+
+function getDatabase() {
+  if (SPREADSHEET_ID && String(SPREADSHEET_ID).trim()) {
+    return SpreadsheetApp.openById(String(SPREADSHEET_ID).trim());
+  }
+  const active = SpreadsheetApp.getActiveSpreadsheet();
+  if (active) return active;
+  throw new Error("Missing spreadsheet. Paste your Google Sheet ID into SPREADSHEET_ID or bind this Apps Script to a Google Sheet.");
 }
 
 function sum(items, key) {
