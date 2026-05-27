@@ -15,6 +15,28 @@ const SHEETS = {
   tools: "tools",
 };
 
+const HEADERS = {
+  users: ["userId", "name", "position", "progress", "score"],
+  courses: ["courseId", "userId", "title", "category", "status", "progress", "hours"],
+  prompts: ["promptId", "title", "category", "uses"],
+  activities: ["activityId", "title", "type", "date", "time"],
+  badges: ["badgeId", "name", "description", "status", "earnedDate"],
+  community: ["postId", "title", "type", "author", "createdAt"],
+  tools: ["toolId", "title", "category", "uses", "url"],
+};
+
+function setupDatabase() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  Object.keys(HEADERS).forEach((sheetName) => {
+    let sheet = ss.getSheetByName(sheetName);
+    if (!sheet) sheet = ss.insertSheet(sheetName);
+    sheet.clear();
+    sheet.getRange(1, 1, 1, HEADERS[sheetName].length).setValues([HEADERS[sheetName]]);
+    sheet.setFrozenRows(1);
+  });
+  return "SCI NU Learning Ecosystem database is ready with empty tables.";
+}
+
 function doGet(e) {
   const params = e && e.parameter ? e.parameter : {};
   const action = String(params.action || "all").toLowerCase();

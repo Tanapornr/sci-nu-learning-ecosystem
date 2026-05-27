@@ -20,19 +20,25 @@
 - `app.js`
 
 ## Google Sheet ที่ต้องมี
-สร้างชีตในไฟล์เดียวกันตามชื่อ:
+ระบบเริ่มต้นจากข้อมูลว่างทั้งหมด ทุกค่าเป็น 0 จนกว่าจะมีการเพิ่มข้อมูลจริงใน Google Sheet
+
+หลังวาง `code.gs` ใน Apps Script ให้รันฟังก์ชัน `setupDatabase()` หนึ่งครั้งเพื่อสร้างชีตและหัวตารางอัตโนมัติ โดยไม่มีข้อมูลตัวอย่าง:
 - `users`
 - `courses`
 - `prompts`
 - `activities`
 - `badges`
+- `community`
+- `tools`
 
 ตัวอย่างคอลัมน์ขั้นต่ำ:
 - users: `userId,name,position,progress,score`
-- courses: `courseId,title,status,progress,hours`
+- courses: `courseId,userId,title,category,status,progress,hours`
 - prompts: `promptId,title,category,uses`
 - activities: `activityId,title,type,date,time`
-- badges: `badgeId,name,description,earnedDate`
+- badges: `badgeId,name,description,status,earnedDate`
+- community: `postId,title,type,author,createdAt`
+- tools: `toolId,title,category,uses,url`
 
 ## Deploy Apps Script
 1. เปิด Google Sheet > Extensions > Apps Script

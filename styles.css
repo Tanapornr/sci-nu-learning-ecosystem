@@ -123,6 +123,10 @@ a { color: inherit; }
   padding: 22px;
 }
 
+body:not(.app-ready) .content {
+  opacity: 0;
+}
+
 .topbar {
   display: flex;
   justify-content: space-between;
@@ -492,6 +496,34 @@ a { color: inherit; }
   display: grid;
   gap: 12px;
   max-width: 760px;
+}
+
+.empty-state {
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  min-height: 150px;
+  padding: 22px;
+  border: 1px dashed #cfd4e8;
+  border-radius: 8px;
+  background: #fbfcff;
+  color: var(--muted);
+  text-align: center;
+}
+
+.empty-state strong {
+  color: var(--ink);
+  font-size: 16px;
+}
+
+.empty-state span {
+  max-width: 430px;
+  font-size: 13px;
+}
+
+.bar.zero {
+  min-height: 2px;
+  opacity: .3;
 }
 
 @media (max-width: 1180px) {

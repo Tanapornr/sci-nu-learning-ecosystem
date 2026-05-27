@@ -1,5 +1,6 @@
 const APP_CONFIG = {
   appsScriptUrl: localStorage.getItem("appsScriptUrl") || "",
+  userId: localStorage.getItem("userId") || "U001",
 };
 
 const thaiDate = new Intl.DateTimeFormat("th-TH", {
@@ -7,6 +8,16 @@ const thaiDate = new Intl.DateTimeFormat("th-TH", {
   month: "long",
   year: "numeric",
 }).format(new Date());
+
+let appData = {
+  users: [],
+  courses: [],
+  prompts: [],
+  activities: [],
+  badges: [],
+  community: [],
+  tools: [],
+};
 
 const pageMeta = {
   "dashboard.html": ["Dashboard", "ภาพรวมการเรียนรู้ ทักษะงาน และการใช้ AI ของคุณ"],
@@ -22,88 +33,52 @@ const pageMeta = {
   "settings.html": ["Settings", "ตั้งค่าระบบและการเชื่อมต่อ Google Sheet"],
 };
 
-function stat(label, value, icon, key) {
-  const attr = key ? ` data-kpi="${key}"` : "";
-  return `<div class="card kpi"><div class="kpi-icon">${icon}</div><div><span class="muted small">${label}</span><strong${attr}>${value}</strong></div></div>`;
+const statusDone = "เรียนจบแล้ว";
+const statusLearning = "กำลังเรียน";
+
+function currentUser() {
+  return appData.users.find((user) => user.userId === APP_CONFIG.userId) || {
+    userId: APP_CONFIG.userId,
+    name: "ผู้เรียนใหม่",
+    position: "บุคลากรสายสนับสนุน",
+    progress: 0,
+    score: 0,
+  };
 }
 
-function course(title, status, progress, meta, icon = "📘") {
-  const tone = status === "เรียนจบแล้ว" ? "green" : status === "ยังไม่เริ่ม" ? "amber" : "blue";
-  return `<div class="card course-card"><div class="row-main"><div class="thumb">${icon}</div><div><h4>${title}</h4><span class="pill ${tone}">${status}</span></div></div><div class="progress"><span style="width:${progress}%"></span></div><div class="row"><span class="muted small">${meta}</span><strong>${progress}%</strong></div></div>`;
+function numberValue(value) {
+  const parsed = Number(String(value || "0").replace(/,/g, ""));
+  return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function prompt(title, category, uses, icon = "🧩") {
-  return `<div class="card prompt-card"><div class="circle">${icon}</div><h4>${title}</h4><p class="muted small">${category}</p><div class="row"><span class="muted small">ใช้งานแล้ว</span><strong>${uses} ครั้ง</strong></div></div>`;
+function userCourses() {
+  return appData.courses.filter((course) => course.userId === APP_CONFIG.userId || !course.userId);
 }
 
-function badge(name, text, color = "blue") {
-  return `<div class="card badge-card"><div class="kpi-icon">${color === "gold" ? "🏆" : color === "green" ? "🎯" : "⭐"}</div><h4>${name}</h4><p class="muted small">${text}</p></div>`;
+function stats() {
+  const courses = userCourses();
+  const learning = courses.filter((course) => course.status === statusLearning);
+  const completed = courses.filter((course) => course.status === statusDone);
+  const hours = completed.reduce((sum, course) => sum + numberValue(course.hours), 0);
+  const score = numberValue(currentUser().score);
+  const progress = courses.length ? Math.round((completed.length / courses.length) * 100) : 0;
+  const earnedBadges = appData.badges.filter((badge) => badge.earnedDate || badge.status === "ได้รับแล้ว");
+
+  return {
+    totalCourses: courses.length,
+    learningCourses: learning.length,
+    completedCourses: completed.length,
+    notStartedCourses: courses.filter((course) => !course.status || course.status === "ยังไม่เริ่ม").length,
+    hours,
+    progress,
+    score,
+    badges: earnedBadges.length,
+    prompts: appData.prompts.length,
+    promptUses: appData.prompts.reduce((sum, item) => sum + numberValue(item.uses), 0),
+    communityPosts: appData.community.length,
+    activities: appData.activities.length,
+  };
 }
-
-function header(file) {
-  const [title, subtitle] = pageMeta[file] || pageMeta["dashboard.html"];
-  return `<div class="topbar"><div><h1 class="page-title">${title}</h1><span class="page-subtitle">${subtitle}</span></div><div class="top-actions"><input class="search" placeholder="ค้นหา..." /><span class="date-pill">📅 <span data-date>${thaiDate}</span></span></div></div>`;
-}
-
-const renderers = {
-  "dashboard.html": () => `${header("dashboard.html")}
-    <section class="grid-5">
-      ${stat("คอร์สที่กำลังเรียน", "4", "📚", "learningCourses")}
-      ${stat("ชั่วโมงเรียนสะสม", "18.5", "⏱")}
-      ${stat("ความก้าวหน้า", "75%", "✅", "progress")}
-      ${stat("Badge ที่ได้รับ", "6", "🏅", "badges")}
-      ${stat("คะแนนรวม", "870", "👥", "score")}
-    </section>
-    <section class="layout-main" style="margin-top:14px">
-      <div class="stack">
-        <div class="panel"><div class="panel-head"><h3>คอร์สที่กำลังเรียน</h3><a class="link" href="mylearning.html">ดูทั้งหมด</a></div><div class="course-grid">${course("การใช้ AI เพื่อการทำงานเอกสาร", "กำลังเรียน", 75, "4 บทเรียน | 18 ชั่วโมง", "🤖")}${course("การวิเคราะห์ข้อมูลด้วย Excel", "กำลังเรียน", 60, "5 บทเรียน | 15 ชั่วโมง", "📊")}${course("การสื่อสารและประสานงานยุคดิจิทัล", "ยังไม่เริ่ม", 0, "3 บทเรียน | 10 ชั่วโมง", "💬")}</div></div>
-        <div class="grid-2"><div class="panel"><div class="panel-head"><h3>ความก้าวหน้ารายเดือน</h3><span class="pill">พ.ค. 67</span></div><div class="chart-box"><div class="bar" style="height:48%"></div><div class="bar" style="height:58%"></div><div class="bar" style="height:66%"></div><div class="bar" style="height:80%"></div><div class="bar" style="height:72%"></div><div class="bar" style="height:68%"></div><div class="bar" style="height:92%"></div><div class="bar" style="height:84%"></div></div></div><div class="panel"><div class="panel-head"><h3>Badge ล่าสุด</h3><a class="link" href="badge.html">ดูทั้งหมด</a></div><div class="grid-2">${badge("AI Explorer", "ใช้ AI Tools 10 ครั้ง")}${badge("Prompt Master", "สร้าง Prompt ใช้งานจริง", "gold")}</div></div></div>
-      </div>
-      <aside class="stack"><div class="panel"><div class="panel-head"><h3>ปฏิทินการเรียนรู้</h3><a class="link" href="mylearning.html">ดูปฏิทิน</a></div><ul class="list"><li class="row"><span>09:00 AI เพื่อเอกสาร</span><span class="pill">เข้าเรียน</span></li><li class="row"><span>13:30 Excel Advanced</span><span class="pill green">จองแล้ว</span></li><li class="row"><span>16:00 สื่อสารยุคดิจิทัล</span><span class="pill amber">กลุ่ม</span></li></ul></div><div class="panel"><h3>AI Assistant แนะนำ</h3><ul class="list"><li class="row">สรุปรายงานประชุม</li><li class="row">ร่างหนังสือราชการ</li><li class="row">สร้าง To-do List รายวัน</li></ul><a class="btn primary" href="aiasistant.html">ถาม AI Assistant</a></div></aside>
-    </section>`,
-
-  "mylearning.html": () => `${header("mylearning.html")}
-    <div class="tabs"><button class="tab active">คอร์สของฉัน</button><button class="tab">บทเรียนที่กำลังเรียน</button><button class="tab">ประวัติการเรียน</button><button class="tab">Wishlist</button></div>
-    <section class="layout-main"><div class="panel"><div class="course-grid">${course("การใช้ AI เพื่อการทำงานเอกสาร", "กำลังเรียน", 75, "ใบประกาศ | 4 บทเรียน", "🤖")}${course("การวิเคราะห์ข้อมูลด้วย Excel", "กำลังเรียน", 60, "ใบประกาศ | 5 บทเรียน", "📗")}${course("การสื่อสารและประสานงานยุคดิจิทัล", "ยังไม่เริ่ม", 0, "3 บทเรียน", "👥")}${course("การสร้างสื่อด้วย Canva AI", "เรียนจบแล้ว", 100, "ใบประกาศ | 4 บทเรียน", "🎨")}</div></div><aside class="stack"><div class="panel"><h3>Learning Journey</h3><ul class="list"><li class="row">ก่อนเรียน <span class="pill green">ผ่าน</span></li><li class="row">ระหว่างเรียน <span class="pill blue">กำลังเรียน</span></li><li class="row">หลังเรียน <span class="pill">รอประเมิน</span></li></ul></div><div class="grid-2">${stat("ค้นหาคอร์ส", "24", "🔍")}${stat("โน้ตของฉัน", "15", "📝")}</div></aside></section>`,
-
-  "courses.html": () => `${header("courses.html")}
-    <div class="tabs"><button class="tab active">ทั้งหมด</button><button class="tab">กำลังเรียน</button><button class="tab">ยังไม่ได้เริ่ม</button><button class="tab">เรียนจบแล้ว</button></div>
-    <section class="grid-4">${stat("คอร์สทั้งหมด", "24", "📚")}${stat("กำลังเรียน", "4", "▶")}${stat("ยังไม่เริ่ม", "12", "⏳")}${stat("เรียนจบแล้ว", "8", "✓")}</section>
-    <section class="layout-main" style="margin-top:14px"><div class="panel"><div class="panel-head"><h3>คอร์สแนะนำ</h3><select class="select"><option>เรียงตาม: ล่าสุด</option></select></div><div class="course-grid">${course("AI สำหรับการทำงานสำนักงาน", "กำลังเรียน", 75, "พื้นฐาน | 2 ชม. 30 นาที", "🤖")}${course("Excel ขั้นสูงเพื่อการทำงาน", "กำลังเรียน", 60, "พื้นฐาน | 3 ชม. 15 นาที", "📊")}${course("Google Workspace เพื่อการทำงาน", "ยังไม่เริ่ม", 0, "พื้นฐาน | 2 ชม.", "🗂")}${course("Power BI สำหรับมือใหม่", "ยังไม่เริ่ม", 0, "ระดับกลาง | 3 ชม.", "📈")}${course("การออกแบบ Infographic ด้วย Canva", "เรียนจบแล้ว", 100, "พื้นฐาน | 1 ชม. 30 นาที", "🎨")}${course("การบริหารโครงการอย่างมีประสิทธิภาพ", "ยังไม่เริ่ม", 0, "ระดับกลาง | 4 ชม.", "🗓")}</div></div><aside class="stack"><div class="panel"><h3>หมวดหมู่คอร์ส</h3><ul class="list"><li class="row">ทักษะดิจิทัล <strong>8</strong></li><li class="row">การใช้ AI <strong>6</strong></li><li class="row">การจัดการข้อมูล <strong>4</strong></li><li class="row">การสื่อสาร <strong>3</strong></li></ul></div><div class="panel"><h3>คอร์สยอดนิยม</h3><ul class="list"><li class="row">AI เพื่อเอกสาร <span>4.8</span></li><li class="row">Excel เพื่อการทำงาน <span>4.7</span></li></ul></div></aside></section>`,
-
-  "aiasistant.html": () => `${header("aiasistant.html")}
-    <section class="hero"><h2>สวัสดีครับ ผมคือ SCI NU AI Assistant</h2><p>พร้อมช่วยสรุปเอกสาร ร่างหนังสือราชการ วิเคราะห์ข้อมูล สร้างบทเรียน และแนะนำการใช้ AI สำหรับงานสนับสนุน</p></section>
-    <section class="layout-main" style="margin-top:14px"><div class="panel chat"><div class="bubble">สวัสดีครับ คุณวารุณี วันนี้ให้ช่วยอะไรดีครับ</div><div class="bubble user">ช่วยสรุปรายงานการประชุมคณะกรรมการบริหาร</div><div class="bubble">ได้ครับ ผมจะสรุปเป็นประเด็นสำคัญ มติที่ประชุม ผู้รับผิดชอบ และงานติดตามให้ทันที</div><div class="chat-input"><input class="input" style="flex:1" placeholder="พิมพ์คำถามหรือวางข้อความที่ต้องการให้ AI ช่วย..." /><button class="btn primary">ส่ง</button></div></div><aside class="stack"><div class="panel"><h3>เครื่องมือ AI ยอดนิยม</h3><div class="grid-2">${prompt("สรุปเอกสาร", "PDF, DOCX, TXT", "245", "📄")}${prompt("แปลภาษา", "ไทย-อังกฤษ", "118", "🌐")}${prompt("วิเคราะห์ข้อมูล", "ตารางและกราฟ", "178", "📊")}${prompt("ตรวจเอกสาร", "ภาษาและรูปแบบ", "96", "✅")}</div></div></aside></section>`,
-
-  "promptlibrary.html": () => `${header("promptlibrary.html")}
-    <section class="hero"><h2>ใช้ Prompt ให้เป็น เหมือนมีผู้ช่วยมืออาชีพ</h2><p>คลังคำสั่งสำหรับงานเอกสาร งานข้อมูล งานนำเสนอ งานสื่อสาร และการวางแผนงาน</p></section>
-    <section class="grid-4" style="margin-top:14px">${stat("Prompt ทั้งหมด", "128", "📄")}${stat("หมวดหมู่", "10", "🗃")}${stat("ยอดใช้งานรวม", "2,456", "⭐")}${stat("Prompt ของฉัน", "23", "💾")}</section>
-    <section class="layout-main" style="margin-top:14px"><div class="panel"><div class="tabs"><button class="tab active">ทั้งหมด</button><button class="tab">งานเอกสาร</button><button class="tab">Excel & Data</button><button class="tab">งานนำเสนอ</button></div><div class="prompt-grid">${prompt("ร่างหนังสือราชการ", "งานเอกสาร", "245", "📃")}${prompt("สรุปรายงานการประชุม", "สรุปและวิเคราะห์", "189", "📊")}${prompt("วิเคราะห์ข้อมูลใน Excel", "Excel & Data", "178", "📗")}${prompt("สร้างสไลด์นำเสนอ", "งานนำเสนอ", "156", "🖼")}${prompt("ร่างอีเมลตอบกลับลูกค้า", "สื่อสารและอีเมล", "143", "✉")}${prompt("จัดทำ To-do List", "จัดการงาน", "98", "✅")}</div></div><aside class="stack"><div class="panel"><h3>Prompt แนะนำ</h3><ul class="list"><li class="row">ตรวจสอบและแก้ไขภาษา</li><li class="row">แปลงข้อมูลเป็นตาราง</li><li class="row">เขียนแผนงาน Timeline</li></ul></div></aside></section>`,
-
-  "community.html": () => `${header("community.html")}
-    <section class="hero"><h2>SCI NU Learning Community</h2><p>พื้นที่แลกเปลี่ยนความรู้ ประสบการณ์ และเครื่องมือที่ช่วยให้ทำงานได้ดีขึ้นร่วมกัน</p></section>
-    <section class="layout-main" style="margin-top:14px"><div class="panel"><div class="tabs"><button class="tab active">ทั้งหมด</button><button class="tab">ถาม-ตอบ</button><button class="tab">ไอเดีย/แนวทาง</button><button class="tab">ประกาศ</button></div><ul class="list"><li class="row">ใครมีเทคนิคใช้ AI ช่วยสรุปรายงานประชุมบ้างคะ <span>28 ความเห็น</span></li><li class="row">แบ่งปันไฟล์ Template หนังสือราชการที่ใช้บ่อย <span>35 ถูกใจ</span></li><li class="row">แนวทางทำ Dashboard ด้วย Power BI สำหรับงานธุรการ <span>42 ถูกใจ</span></li><li class="row">Workshop การใช้ Canva AI เพื่อสื่อประชาสัมพันธ์ <span>20 ที่นั่ง</span></li></ul></div><aside class="stack"><div class="grid-2">${stat("สมาชิก", "342", "👥")}${stat("การพูดคุย", "1,245", "💬")}${stat("การมีส่วนร่วม", "86%", "❤️")}${stat("ไฟล์เอกสาร", "568", "⬇")}</div><div class="panel"><h3>กลุ่มยอดนิยม</h3><ul class="list"><li class="row">Smart Admin <span class="pill green">เข้าร่วม</span></li><li class="row">Excel & Data Analysis <span class="pill green">เข้าร่วม</span></li><li class="row">AI เพื่อการทำงาน <span class="pill">เข้าร่วม</span></li></ul></div></aside></section>`,
-
-  "workplace.html": () => `${header("workplace.html")}
-    <section class="hero"><h2>เครื่องมือที่เชื่อมต่อการทำงานของคุณ</h2><p>รวมระบบสำคัญ เอกสาร ฟอร์ม Template และ workflow ที่ช่วยลดเวลาทำงานซ้ำ</p></section>
-    <section class="layout-main" style="margin-top:14px"><div class="stack"><div class="panel"><h3>เครื่องมือสำหรับการทำงาน</h3><div class="tool-grid">${prompt("Google Workspace", "เอกสาร ชีต สไลด์ ไดรฟ์", "เปิดใช้งาน", "G")}${prompt("Microsoft 365", "Word Excel PowerPoint", "เปิดใช้งาน", "M")}${prompt("e-Document", "ระบบเอกสารอิเล็กทรอนิกส์", "เข้าสู่ระบบ", "📁")}${prompt("e-Meeting", "ประชุมและติดตามมติ", "เปิดใช้งาน", "🎥")}${prompt("Data Dashboard", "ติดตามตัวชี้วัด", "ดูแดชบอร์ด", "📊")}${prompt("IT Support", "แจ้งปัญหาระบบ", "แจ้งปัญหา", "🎧")}</div></div><div class="panel"><h3>Workflows ที่ใช้บ่อย</h3><ul class="list"><li class="row">ขั้นตอนการขออนุมัติโครงการ</li><li class="row">ขั้นตอนการเบิกจ่ายงบประมาณ</li><li class="row">ขั้นตอนการจัดซื้อจัดจ้าง</li></ul></div></div><aside class="stack"><div class="panel"><h3>ไฟล์ล่าสุดของคุณ</h3><ul class="list"><li class="row">รายงานการประชุม.xlsx</li><li class="row">หนังสือเชิญประชุม.docx</li><li class="row">สรุปผลการดำเนินงาน.pptx</li></ul></div><div class="panel"><h3>ปฏิทินการทำงาน</h3><ul class="list"><li class="row">09:00 ประชุมคณะกรรมการ</li><li class="row">11:00 ติดตามโครงการ</li><li class="row">13:30 จัดทำรายงานประจำเดือน</li></ul></div></aside></section>`,
-
-  "analytics.html": () => `${header("analytics.html")}
-    <section class="grid-5">${stat("ผู้ใช้งานทั้งหมด", "1,245", "👥")}${stat("คอร์สที่เรียนจบ", "356", "📘")}${stat("เวลาเรียนรวม", "1,892", "⏱")}${stat("อัตราเรียนจบ", "78.6%", "✅")}${stat("คะแนนพึงพอใจ", "4.38", "⭐")}</section>
-    <section class="layout-main" style="margin-top:14px"><div class="stack"><div class="panel"><div class="panel-head"><h3>แนวโน้มการใช้งานรายสัปดาห์</h3><span class="pill">รายสัปดาห์</span></div><div class="chart-box"><div class="bar" style="height:70%"></div><div class="bar" style="height:78%"></div><div class="bar" style="height:64%"></div><div class="bar" style="height:76%"></div><div class="bar" style="height:58%"></div><div class="bar" style="height:84%"></div><div class="bar" style="height:80%"></div><div class="bar" style="height:69%"></div></div></div><div class="grid-2"><div class="panel"><h3>สัดส่วนหมวดหมู่</h3><div class="donut"></div></div><div class="panel"><h3>การมีส่วนร่วม</h3><ul class="list"><li class="row">Active Users <strong>892</strong></li><li class="row">อ่านบทความ <strong>1,023</strong></li><li class="row">ใช้ Prompt <strong>245</strong></li></ul></div></div></div><aside class="stack"><div class="panel"><h3>คอร์สยอดนิยม</h3><ul class="list"><li class="row">AI เพื่อเอกสาร <strong>4.8</strong></li><li class="row">Excel ขั้นสูง <strong>4.7</strong></li><li class="row">Canva AI <strong>4.6</strong></li></ul></div><div class="panel"><h3>กิจกรรมล่าสุด</h3><ul class="list"><li class="row">สมชายเริ่มเรียน AI</li><li class="row">ปิยดาจบ Excel ขั้นสูง</li><li class="row">วารุณีใช้ Prompt ใหม่</li></ul></div></aside></section>`,
-
-  "portfolio.html": () => `${header("portfolio.html")}
-    <section class="hero"><h2>น.ส. วารุณี จันทร์ดี</h2><p>เจ้าหน้าที่บริหารงานทั่วไป | แฟ้มสะสมการเรียนรู้และผลงานด้านทักษะดิจิทัล</p></section>
-    <section class="grid-5" style="margin-top:14px">${stat("คอร์สทั้งหมด", "56", "📚")}${stat("คอร์สที่จบแล้ว", "38", "🎓")}${stat("เวลาเรียนสะสม", "124.5", "⏱")}${stat("ใบประกาศ", "27", "🏆")}${stat("คะแนนสะสม", "2,850", "⭐")}</section>
-    <section class="grid-3" style="margin-top:14px"><div class="panel"><h3>ความคืบหน้าการเรียนรู้</h3><ul class="list"><li class="row">Excel ขั้นสูง <strong>85%</strong></li><li class="row">Canva AI <strong>60%</strong></li><li class="row">AI เพื่อเอกสาร <strong>45%</strong></li></ul></div><div class="panel"><h3>ใบประกาศล่าสุด</h3><ul class="list"><li class="row">Excel ขั้นสูงเพื่อการทำงาน</li><li class="row">การใช้ AI เพื่อการทำงานเอกสาร</li><li class="row">Power BI สำหรับมือใหม่</li></ul></div><div class="panel"><h3>รางวัลและความสำเร็จ</h3><div class="grid-2">${badge("Fast Learner", "เรียนต่อเนื่อง 14 วัน")}${badge("Top Performer", "คะแนนสูงประจำเดือน", "gold")}</div></div></section>`,
-
-  "badge.html": () => `${header("badge.html")}
-    <section class="hero"><h2>ยินดีด้วย คุณอยู่ในระดับ Top Performer</h2><p>คุณอยู่ในกลุ่มผู้เรียนระดับบนขององค์กร และกำลังเข้าใกล้ระดับ Expert</p><div class="progress" style="max-width:620px;margin-top:18px"><span style="width:71%"></span></div></section>
-    <section class="layout-main" style="margin-top:14px"><div class="stack"><div class="panel"><div class="panel-head"><h3>Badge ที่ได้รับแล้ว</h3><a class="link">ดูทั้งหมด</a></div><div class="badge-grid">${badge("Fast Learner", "เรียนต่อเนื่อง 14 วัน")}${badge("Top Performer", "คะแนนสะสมครบ 2,500", "gold")}${badge("Goal Achiever", "บรรลุเป้าหมาย 10 ครั้ง", "green")}${badge("Community Contributor", "ช่วยเหลือผู้อื่น 20 ครั้ง")}${badge("Knowledge Seeker", "เรียนครบ 50 คอร์ส")}${badge("AI Explorer", "ใช้ AI Tools 10 ครั้ง")}</div></div><div class="panel"><h3>Badge ที่ยังไม่ได้รับ</h3><div class="badge-grid">${badge("Next Level", "ครบ 5,000 คะแนน")}${badge("Content Creator", "สร้างสื่อ 20 รายการ")}${badge("Mentor", "เป็นพี่เลี้ยง 10 คน")}</div></div></div><aside class="stack"><div class="panel">${stat("ระดับปัจจุบัน", "Top Performer", "⭐")}${stat("คะแนนรวม", "18,450", "📈")}${stat("Badge ที่ได้รับ", "28", "🏅")}</div><div class="panel"><h3>อันดับผู้เรียนประจำเดือน</h3><ul class="list"><li class="row">พรพรรณ คำดี <strong>4,250</strong></li><li class="row">วารุณี จันทร์ดี <strong>2,850</strong></li><li class="row">ธนากร ศรีสมบัติ <strong>2,640</strong></li></ul></div></aside></section>`,
-
-  "settings.html": () => `${header("settings.html")}
-    <section class="grid-2"><div class="panel"><h3>เชื่อมต่อ Google Sheet</h3><p class="muted">วาง URL Web App จาก Apps Script เพื่อให้ทุกหน้าดึงข้อมูลจริงจาก Google Sheet</p><form id="settingsForm" class="settings-form"><input id="appsScriptUrl" class="input" placeholder="https://script.google.com/macros/s/.../exec" /><button class="btn primary" type="submit">บันทึกและทดสอบ</button><span id="settingsStatus" class="muted small">ยังไม่ได้ทดสอบการเชื่อมต่อ</span></form></div><div class="panel"><h3>โครงสร้าง Sheet ที่ระบบใช้</h3><ul class="list"><li class="row">users: userId, name, position, progress, score</li><li class="row">courses: courseId, title, status, progress, hours</li><li class="row">prompts: promptId, title, category, uses</li><li class="row">activities: activityId, title, type, date, time</li><li class="row">badges: badgeId, name, description, earnedDate</li></ul></div></section>`,
-};
 
 function setAppsScriptUrl(url) {
   APP_CONFIG.appsScriptUrl = url;
@@ -144,7 +119,7 @@ function jsonp(url, params = {}) {
 async function loadSheetData(action) {
   if (!APP_CONFIG.appsScriptUrl) return null;
   try {
-    const result = await jsonp(APP_CONFIG.appsScriptUrl, { action });
+    const result = await jsonp(APP_CONFIG.appsScriptUrl, { action, userId: APP_CONFIG.userId });
     return result && result.success ? result.data : null;
   } catch (err) {
     console.warn(err.message);
@@ -152,11 +127,224 @@ async function loadSheetData(action) {
   }
 }
 
-function setDatePills() {
-  document.querySelectorAll("[data-date]").forEach((node) => {
-    node.textContent = thaiDate;
-  });
+async function hydrateData() {
+  const data = await loadSheetData("all");
+  if (!data) return;
+  appData = {
+    users: data.users || [],
+    courses: data.courses || [],
+    prompts: data.prompts || [],
+    activities: data.activities || [],
+    badges: data.badges || [],
+    community: data.community || [],
+    tools: data.tools || [],
+  };
 }
+
+function header(file) {
+  const [title, subtitle] = pageMeta[file] || pageMeta["dashboard.html"];
+  return `<div class="topbar"><div><h1 class="page-title">${title}</h1><span class="page-subtitle">${subtitle}</span></div><div class="top-actions"><input class="search" placeholder="ค้นหา..." /><span class="date-pill">📅 <span data-date>${thaiDate}</span></span></div></div>`;
+}
+
+function stat(label, value, icon) {
+  return `<div class="card kpi"><div class="kpi-icon">${icon}</div><div><span class="muted small">${label}</span><strong>${value}</strong></div></div>`;
+}
+
+function emptyState(title, text) {
+  return `<div class="empty-state"><strong>${title}</strong><span>${text}</span></div>`;
+}
+
+function panel(title, body, link) {
+  const action = link ? `<a class="link" href="${link.href}">${link.label}</a>` : "";
+  return `<div class="panel"><div class="panel-head"><h3>${title}</h3>${action}</div>${body}</div>`;
+}
+
+function progressBar(value) {
+  return `<div class="progress"><span style="width:${Math.max(0, Math.min(100, numberValue(value)))}%"></span></div>`;
+}
+
+function courseCard(course) {
+  const title = course.title || "ไม่มีชื่อคอร์ส";
+  const status = course.status || "ยังไม่เริ่ม";
+  const progress = numberValue(course.progress);
+  const tone = status === statusDone ? "green" : status === statusLearning ? "blue" : "amber";
+  return `<div class="card course-card"><div class="row-main"><div class="thumb">📘</div><div><h4>${title}</h4><span class="pill ${tone}">${status}</span></div></div>${progressBar(progress)}<div class="row"><span class="muted small">${course.category || "ยังไม่ระบุหมวดหมู่"}</span><strong>${progress}%</strong></div></div>`;
+}
+
+function promptCard(item) {
+  return `<div class="card prompt-card"><div class="circle">✦</div><h4>${item.title || "ไม่มีชื่อ Prompt"}</h4><p class="muted small">${item.category || "ทั่วไป"}</p><div class="row"><span class="muted small">ใช้งานแล้ว</span><strong>${numberValue(item.uses)} ครั้ง</strong></div></div>`;
+}
+
+function badgeCard(item, locked = false) {
+  return `<div class="card badge-card"><div class="kpi-icon">${locked ? "🔒" : "🏅"}</div><h4>${item.name || "Badge"}</h4><p class="muted small">${item.description || "ยังไม่มีรายละเอียด"}</p></div>`;
+}
+
+function listRows(items, emptyTitle, emptyText, render) {
+  if (!items.length) return emptyState(emptyTitle, emptyText);
+  return `<ul class="list">${items.map(render).join("")}</ul>`;
+}
+
+function courseGrid(courses, emptyTitle, emptyText) {
+  if (!courses.length) return emptyState(emptyTitle, emptyText);
+  return `<div class="course-grid">${courses.map(courseCard).join("")}</div>`;
+}
+
+function promptGrid(items, emptyTitle, emptyText) {
+  if (!items.length) return emptyState(emptyTitle, emptyText);
+  return `<div class="prompt-grid">${items.map(promptCard).join("")}</div>`;
+}
+
+function badgeGrid(items, emptyTitle, emptyText, locked = false) {
+  if (!items.length) return emptyState(emptyTitle, emptyText);
+  return `<div class="badge-grid">${items.map((item) => badgeCard(item, locked)).join("")}</div>`;
+}
+
+function zeroChart() {
+  return `<div class="chart-box">${Array.from({ length: 8 }, () => `<div class="bar zero" style="height:0%"></div>`).join("")}</div>`;
+}
+
+function renderDashboard() {
+  const s = stats();
+  const learning = userCourses().filter((course) => course.status === statusLearning);
+  const earnedBadges = appData.badges.filter((badge) => badge.earnedDate || badge.status === "ได้รับแล้ว");
+  return `${header("dashboard.html")}
+    <section class="grid-5">
+      ${stat("คอร์สที่กำลังเรียน", s.learningCourses, "📚")}
+      ${stat("ชั่วโมงเรียนสะสม", s.hours, "⏱")}
+      ${stat("ความก้าวหน้า", `${s.progress}%`, "✅")}
+      ${stat("Badge ที่ได้รับ", s.badges, "🏅")}
+      ${stat("คะแนนรวม", s.score, "👥")}
+    </section>
+    <section class="layout-main" style="margin-top:14px">
+      <div class="stack">
+        ${panel("คอร์สที่กำลังเรียน", courseGrid(learning, "ยังไม่มีคอร์สที่กำลังเรียน", "เมื่อเริ่มเรียนคอร์ส รายการจะมาแสดงตรงนี้"), { href: "mylearning.html", label: "ดูทั้งหมด" })}
+        <div class="grid-2">
+          ${panel("ความก้าวหน้ารายเดือน", zeroChart())}
+          ${panel("Badge ล่าสุด", badgeGrid(earnedBadges, "ยังไม่ได้รับ Badge", "เมื่อเรียนสำเร็จหรือทำกิจกรรมครบเงื่อนไข Badge จะแสดงที่นี่"), { href: "badge.html", label: "ดูทั้งหมด" })}
+        </div>
+      </div>
+      <aside class="stack">
+        ${panel("ปฏิทินการเรียนรู้", listRows(appData.activities, "ยังไม่มีกิจกรรม", "เมื่อมีตารางอบรมหรือกิจกรรม ระบบจะแสดงที่นี่", (item) => `<li class="row"><span>${item.title || "กิจกรรม"}</span><span class="pill">${item.time || "รอเวลา"}</span></li>`))}
+        ${panel("AI Assistant แนะนำ", `<p class="muted">พร้อมใช้งานสำหรับช่วยงานเอกสาร สรุปข้อมูล และร่าง Prompt แต่ยังไม่บันทึกประวัติการเรียนจนกว่าจะเชื่อม Google Sheet</p><a class="btn primary" href="aiasistant.html">ถาม AI Assistant</a>`)}
+      </aside>
+    </section>`;
+}
+
+function renderMyLearning() {
+  const courses = userCourses().filter((course) => course.status);
+  return `${header("mylearning.html")}
+    <div class="tabs"><button class="tab active">คอร์สของฉัน</button><button class="tab">บทเรียนที่กำลังเรียน</button><button class="tab">ประวัติการเรียน</button><button class="tab">Wishlist</button></div>
+    <section class="layout-main">
+      ${panel("คอร์สของฉัน", courseGrid(courses, "ยังไม่ได้เริ่มเรียน", "เมื่อกดเริ่มเรียนคอร์ส รายการและความก้าวหน้าจะมาแสดงที่นี่"))}
+      <aside class="stack">
+        ${panel("Learning Journey", `<ul class="list"><li class="row">ก่อนเรียน <span class="pill">0%</span></li><li class="row">ระหว่างเรียน <span class="pill">0%</span></li><li class="row">หลังเรียน <span class="pill">0%</span></li></ul>`)}
+        <div class="grid-2">${stat("โน้ตของฉัน", 0, "📝")}${stat("ใบประกาศ", 0, "🏆")}</div>
+      </aside>
+    </section>`;
+}
+
+function renderCourses() {
+  const s = stats();
+  return `${header("courses.html")}
+    <div class="tabs"><button class="tab active">ทั้งหมด</button><button class="tab">กำลังเรียน</button><button class="tab">ยังไม่ได้เริ่ม</button><button class="tab">เรียนจบแล้ว</button></div>
+    <section class="grid-4">${stat("คอร์สทั้งหมด", s.totalCourses, "📚")}${stat("กำลังเรียน", s.learningCourses, "▶")}${stat("ยังไม่เริ่ม", s.notStartedCourses, "⏳")}${stat("เรียนจบแล้ว", s.completedCourses, "✓")}</section>
+    <section class="layout-main" style="margin-top:14px">
+      ${panel("คอร์สทั้งหมด", courseGrid(userCourses(), "ยังไม่มีคอร์สในระบบ", "เพิ่มข้อมูลในชีต courses แล้วระบบจะแสดงคอร์สจริงที่นี่"))}
+      <aside class="stack">
+        ${panel("หมวดหมู่คอร์ส", listRows([], "ยังไม่มีหมวดหมู่", "หมวดหมู่จะคำนวณจากข้อมูลคอร์สจริง", () => ""))}
+        ${panel("คอร์สยอดนิยม", emptyState("ยังไม่มีข้อมูลความนิยม", "เมื่อมีผู้เรียนและคะแนนรีวิว ระบบจะแสดงอันดับคอร์ส"))}
+      </aside>
+    </section>`;
+}
+
+function renderAiAssistant() {
+  return `${header("aiasistant.html")}
+    <section class="hero"><h2>SCI NU AI Assistant</h2><p>พร้อมช่วยงานเอกสาร สรุปข้อมูล ร่างข้อความ และออกแบบ Prompt สำหรับงานสนับสนุน โดยไม่บันทึกเป็นความก้าวหน้าการเรียนจนกว่าคุณจะเริ่มคอร์สจริง</p></section>
+    <section class="layout-main" style="margin-top:14px">
+      <div class="panel chat"><div class="bubble">สวัสดีครับ วันนี้ให้ช่วยเรื่องงานหรือการเรียนรู้อะไรดีครับ</div><div class="chat-input"><input class="input" style="flex:1" placeholder="พิมพ์คำถามหรือวางข้อความที่ต้องการให้ AI ช่วย..." /><button class="btn primary">ส่ง</button></div></div>
+      <aside class="stack">${panel("เครื่องมือ AI", promptGrid(appData.prompts, "ยังไม่มี Prompt/เครื่องมือที่บันทึกไว้", "เพิ่มข้อมูลในชีต prompts เพื่อแสดงเครื่องมือหรือ Prompt ที่องค์กรอนุมัติ"))}</aside>
+    </section>`;
+}
+
+function renderPromptLibrary() {
+  const s = stats();
+  return `${header("promptlibrary.html")}
+    <section class="grid-4">${stat("Prompt ทั้งหมด", s.prompts, "📄")}${stat("หมวดหมู่", new Set(appData.prompts.map((p) => p.category).filter(Boolean)).size, "🗃")}${stat("ยอดใช้งานรวม", s.promptUses, "⭐")}${stat("Prompt ของฉัน", 0, "💾")}</section>
+    <section class="layout-main" style="margin-top:14px">
+      ${panel("Prompt Library", promptGrid(appData.prompts, "ยังไม่มี Prompt ในระบบ", "เพิ่มรายการในชีต prompts เพื่อให้ผู้ใช้เลือกนำไปใช้ได้จริง"))}
+      <aside>${panel("คลังของฉัน", emptyState("ยังไม่มี Prompt ส่วนตัว", "เมื่อผู้ใช้บันทึก Prompt ส่วนตัว รายการจะแสดงที่นี่"))}</aside>
+    </section>`;
+}
+
+function renderCommunity() {
+  const s = stats();
+  return `${header("community.html")}
+    <section class="grid-4">${stat("สมาชิก", appData.users.length, "👥")}${stat("กระทู้", s.communityPosts, "💬")}${stat("การมีส่วนร่วม", "0%", "❤️")}${stat("ไฟล์เอกสาร", 0, "⬇")}</section>
+    <section class="layout-main" style="margin-top:14px">
+      ${panel("กระทู้ชุมชน", listRows(appData.community, "ยังไม่มีกระทู้", "เมื่อมีการตั้งคำถามหรือแบ่งปันความรู้ รายการจะแสดงที่นี่", (item) => `<li class="row"><span>${item.title || "กระทู้"}</span><span>${item.type || "ทั่วไป"}</span></li>`))}
+      <aside>${panel("กิจกรรมใกล้เคียง", listRows(appData.activities, "ยังไม่มีกิจกรรม", "เพิ่มข้อมูลในชีต activities เพื่อแสดงกำหนดการจริง", (item) => `<li class="row"><span>${item.title || "กิจกรรม"}</span><span>${item.date || "-"}</span></li>`))}</aside>
+    </section>`;
+}
+
+function renderWorkplace() {
+  return `${header("workplace.html")}
+    <section class="layout-main">
+      ${panel("เครื่องมือสำหรับการทำงาน", promptGrid(appData.tools, "ยังไม่มีเครื่องมือในระบบ", "เพิ่มรายการในชีต tools เช่น Google Workspace, e-Document, e-Meeting เพื่อให้ผู้ใช้เปิดใช้งานได้"))}
+      <aside>${panel("ไฟล์ล่าสุดของคุณ", emptyState("ยังไม่มีไฟล์ล่าสุด", "เมื่อเชื่อมต่อระบบเอกสารหรือบันทึกลิงก์ไฟล์ รายการจะแสดงที่นี่"))}</aside>
+    </section>`;
+}
+
+function renderAnalytics() {
+  const s = stats();
+  return `${header("analytics.html")}
+    <section class="grid-5">${stat("ผู้ใช้งานทั้งหมด", appData.users.length, "👥")}${stat("คอร์สที่เรียนจบ", s.completedCourses, "📘")}${stat("เวลาเรียนรวม", s.hours, "⏱")}${stat("อัตราเรียนจบ", `${s.progress}%`, "✅")}${stat("คะแนนพึงพอใจ", "0 / 5", "⭐")}</section>
+    <section class="layout-main" style="margin-top:14px">
+      <div class="stack">${panel("แนวโน้มการใช้งานรายสัปดาห์", zeroChart())}${panel("การมีส่วนร่วมของผู้เรียน", `<ul class="list"><li class="row">Active Users <strong>0</strong></li><li class="row">อ่านบทความ <strong>0</strong></li><li class="row">ใช้ Prompt <strong>${s.promptUses}</strong></li></ul>`)}</div>
+      <aside>${panel("กิจกรรมล่าสุด", emptyState("ยังไม่มีกิจกรรมล่าสุด", "ข้อมูลจะเริ่มสะสมเมื่อผู้ใช้เริ่มเรียนและทำกิจกรรม"))}</aside>
+    </section>`;
+}
+
+function renderPortfolio() {
+  const user = currentUser();
+  const s = stats();
+  return `${header("portfolio.html")}
+    <section class="hero"><h2>${user.name}</h2><p>${user.position || "บุคลากรสายสนับสนุน"} | แฟ้มสะสมการเรียนรู้จะเริ่มนับจากกิจกรรมจริงเท่านั้น</p></section>
+    <section class="grid-5" style="margin-top:14px">${stat("คอร์สทั้งหมด", s.totalCourses, "📚")}${stat("คอร์สที่จบแล้ว", s.completedCourses, "🎓")}${stat("เวลาเรียนสะสม", s.hours, "⏱")}${stat("ใบประกาศ", 0, "🏆")}${stat("คะแนนสะสม", s.score, "⭐")}</section>
+    <section class="grid-3" style="margin-top:14px">${panel("ความคืบหน้าการเรียนรู้", courseGrid(userCourses().filter((c) => c.status), "ยังไม่มีความคืบหน้า", "เมื่อเริ่มเรียนคอร์ส ความคืบหน้าจะปรากฏที่นี่"))}${panel("ใบประกาศล่าสุด", emptyState("ยังไม่มีใบประกาศ", "เมื่อเรียนจบและผ่านเงื่อนไข ใบประกาศจะแสดงที่นี่"))}${panel("รางวัลและความสำเร็จ", badgeGrid(appData.badges.filter((b) => b.earnedDate), "ยังไม่มีรางวัล", "เริ่มเรียนและทำกิจกรรมเพื่อสะสมความสำเร็จ"))}</section>`;
+}
+
+function renderBadge() {
+  const earned = appData.badges.filter((item) => item.earnedDate || item.status === "ได้รับแล้ว");
+  const locked = appData.badges.filter((item) => !item.earnedDate && item.status !== "ได้รับแล้ว");
+  return `${header("badge.html")}
+    <section class="hero"><h2>เริ่มต้นสะสม Badge</h2><p>ตอนนี้ยังไม่มี Badge เพราะยังไม่ได้เรียนหรือทำกิจกรรมสำเร็จ ความก้าวหน้าทุกอย่างจะเริ่มจาก 0</p>${progressBar(0)}</section>
+    <section class="layout-main" style="margin-top:14px">
+      <div class="stack">${panel("Badge ที่ได้รับแล้ว", badgeGrid(earned, "ยังไม่ได้รับ Badge", "เมื่อทำเงื่อนไขสำเร็จ Badge จะแสดงที่นี่"))}${panel("Badge ที่ยังไม่ได้รับ", badgeGrid(locked, "ยังไม่มีรายการ Badge", "เพิ่มเงื่อนไข Badge ในชีต badges เพื่อใช้เป็นเป้าหมาย", true))}</div>
+      <aside>${panel("สถานะปัจจุบัน", `${stat("ระดับปัจจุบัน", "Beginner", "⭐")}${stat("คะแนนรวม", 0, "📈")}${stat("Badge ที่ได้รับ", earned.length, "🏅")}`)}</aside>
+    </section>`;
+}
+
+function renderSettings() {
+  return `${header("settings.html")}
+    <section class="grid-2">
+      <div class="panel"><h3>เชื่อมต่อ Google Sheet</h3><p class="muted">วาง URL Web App จาก Apps Script เพื่อให้ทุกหน้าดึงข้อมูลจริงจาก Google Sheet</p><form id="settingsForm" class="settings-form"><input id="appsScriptUrl" class="input" placeholder="https://script.google.com/macros/s/.../exec" /><button class="btn primary" type="submit">บันทึกและทดสอบ</button><span id="settingsStatus" class="muted small">ยังไม่ได้ทดสอบการเชื่อมต่อ</span></form></div>
+      <div class="panel"><h3>สถานะเริ่มต้นของระบบ</h3><ul class="list"><li class="row">คะแนนเริ่มต้น <strong>0</strong></li><li class="row">ชั่วโมงเรียนเริ่มต้น <strong>0</strong></li><li class="row">คอร์สที่จบแล้ว <strong>0</strong></li><li class="row">Badge ที่ได้รับ <strong>0</strong></li></ul></div>
+    </section>`;
+}
+
+const renderers = {
+  "dashboard.html": renderDashboard,
+  "mylearning.html": renderMyLearning,
+  "courses.html": renderCourses,
+  "aiasistant.html": renderAiAssistant,
+  "promptlibrary.html": renderPromptLibrary,
+  "community.html": renderCommunity,
+  "workplace.html": renderWorkplace,
+  "analytics.html": renderAnalytics,
+  "portfolio.html": renderPortfolio,
+  "badge.html": renderBadge,
+  "settings.html": renderSettings,
+};
 
 function bindSettingsForm() {
   const form = document.getElementById("settingsForm");
@@ -170,40 +358,21 @@ function bindSettingsForm() {
     event.preventDefault();
     setAppsScriptUrl(input.value.trim());
     status.textContent = "บันทึก URL แล้ว กำลังทดสอบการเชื่อมต่อ...";
-    const data = await loadSheetData("dashboard");
+    const data = await loadSheetData("all");
     status.textContent = data
       ? "เชื่อมต่อ Google Sheet สำเร็จ"
       : "บันทึกแล้ว แต่ยังเชื่อมต่อไม่ได้ โปรดตรวจ URL และสิทธิ์ Web App";
   });
 }
 
-function bindDemoHydration() {
-  const dashboardKpis = document.querySelectorAll("[data-kpi]");
-  if (!dashboardKpis.length) return;
-
-  loadSheetData("dashboard").then((data) => {
-    if (!data || !data.stats) return;
-    const map = {
-      learningCourses: data.stats.learningCourses,
-      completedCourses: data.stats.completedCourses,
-      progress: `${data.stats.progress || 0}%`,
-      score: data.stats.score,
-      badges: data.stats.badges,
-    };
-
-    dashboardKpis.forEach((node) => {
-      const key = node.dataset.kpi;
-      if (map[key] !== undefined) node.textContent = map[key];
-    });
-  });
+async function renderCurrentPage() {
+  await hydrateData();
+  const file = window.location.pathname.split("/").pop() || "dashboard.html";
+  const renderer = renderers[file] || renderDashboard;
+  const content = document.querySelector(".content");
+  if (content) content.innerHTML = renderer();
+  document.body.classList.add("app-ready");
+  bindSettingsForm();
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  const file = window.location.pathname.split("/").pop() || "dashboard.html";
-  const renderer = renderers[file];
-  const content = document.querySelector(".content");
-  if (renderer && content) content.innerHTML = renderer();
-  setDatePills();
-  bindSettingsForm();
-  bindDemoHydration();
-});
+document.addEventListener("DOMContentLoaded", renderCurrentPage);
