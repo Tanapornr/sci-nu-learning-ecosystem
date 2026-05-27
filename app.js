@@ -346,14 +346,51 @@ function renderDashboard() {
     </section>`;
 }
 
+function learningFlow() {
+  const steps = [
+    {
+      phase: "1",
+      title: "ก่อนเรียน",
+      items: ["Pre-test Digital Skills", "AI Readiness Check", "วิเคราะห์ Pain Point"],
+      note: "สำรวจระดับเริ่มต้นและปัญหางานจริงของผู้เรียน",
+    },
+    {
+      phase: "2",
+      title: "ระหว่างเรียน",
+      items: ["Workshop ใช้ AI", "Collaborative Tasks", "ทำ Project จากงานจริง"],
+      note: "ฝึกใช้เครื่องมือกับงานสนับสนุนที่ทำอยู่จริง",
+    },
+    {
+      phase: "3",
+      title: "หลังเรียน",
+      items: ["Reflection", "แชร์ Best Practice", "AI-assisted Feedback"],
+      note: "สะท้อนผลลัพธ์และรับข้อเสนอแนะเพื่อปรับปรุงงาน",
+    },
+    {
+      phase: "4",
+      title: "การเรียนรู้นอกห้องเรียน",
+      items: ["Community Line/OpenChat", "Microlearning", "Prompt Sharing"],
+      note: "ต่อยอดผ่านชุมชนและการเรียนรู้สั้น ๆ ต่อเนื่อง",
+    },
+    {
+      phase: "5",
+      title: "Lifelong Learning Extension",
+      items: ["AI Skill Pathway", "Learning Portfolio", "Learning Analytics Dashboard"],
+      note: "เก็บหลักฐานผลงานและวางเส้นทางทักษะระยะยาว",
+    },
+  ];
+  return `<div class="journey-flow">${steps.map((step) => `<article class="journey-step"><div class="journey-index">${step.phase}</div><div><h4>${step.title}</h4><ul class="journey-items">${step.items.map((item) => `<li>${item}</li>`).join("")}</ul><p class="muted small">${step.note}</p></div><span class="pill">0%</span></article>`).join("")}</div>`;
+}
+
 function renderMyLearning() {
   const enrollments = userEnrollments();
   return `${header("mylearning.html")}
     <div class="tabs"><button class="tab active">คอร์สของฉัน</button><button class="tab">บทเรียนที่กำลังเรียน</button><button class="tab">ประวัติการเรียน</button><button class="tab">Wishlist</button></div>
+    ${panel("Learning Journey สำคัญของระบบ", learningFlow())}
     <section class="layout-main">
       ${panel("คอร์สของฉัน", courseGrid(enrollments, "ยังไม่ได้เริ่มเรียน", "เมื่อกดเริ่มเรียนคอร์ส รายการและความก้าวหน้าจะมาแสดงที่นี่"))}
       <aside class="stack">
-        ${panel("Learning Journey", `<ul class="list"><li class="row">ก่อนเรียน <span class="pill">0%</span></li><li class="row">ระหว่างเรียน <span class="pill">0%</span></li><li class="row">หลังเรียน <span class="pill">0%</span></li></ul>`)}
+        ${panel("สถานะ Learning Flow", `<ul class="list"><li class="row">ก่อนเรียน <span class="pill">รอเริ่ม</span></li><li class="row">ระหว่างเรียน <span class="pill">รอเริ่ม</span></li><li class="row">หลังเรียน <span class="pill">รอเริ่ม</span></li><li class="row">Lifelong Learning <span class="pill">รอเริ่ม</span></li></ul>`)}
         <div class="grid-2">${stat("โน้ตของฉัน", 0, "📝")}${stat("ใบประกาศ", 0, "🏆")}</div>
       </aside>
     </section>`;
@@ -443,8 +480,8 @@ function renderBadge() {
 function renderSettings() {
   return `${header("settings.html")}
     <section class="grid-2">
-      <div class="panel"><h3>เชื่อมต่อ Google Sheet</h3><p class="muted">วาง URL Web App จาก Apps Script เพื่อให้ทุกหน้าดึงข้อมูลจริงจาก Google Sheet</p><form id="settingsForm" class="settings-form"><input id="appsScriptUrl" class="input" placeholder="https://script.google.com/macros/s/.../exec" /><button class="btn primary" type="submit">บันทึกและทดสอบ</button><button class="btn" type="button" id="setupSheetButton">สร้าง/เติมข้อมูล Google Sheet</button><span id="settingsStatus" class="muted small">ยังไม่ได้ทดสอบการเชื่อมต่อ</span></form></div>
-      <div class="panel"><h3>สถานะเริ่มต้นของผู้เรียน</h3><ul class="list"><li class="row">คะแนนเริ่มต้น <strong>0</strong></li><li class="row">ชั่วโมงเรียนเริ่มต้น <strong>0</strong></li><li class="row">คอร์สที่จบแล้ว <strong>0</strong></li><li class="row">Badge ที่ได้รับ <strong>0</strong></li><li class="row">คลังคอร์สพร้อมใช้งาน <strong>${catalogCourses().length}</strong></li></ul></div>
+      <div class="panel"><h3>ตั้งค่าหลังบ้าน Google Sheet สำหรับผู้ดูแลระบบ</h3><p class="muted">ส่วนนี้ทำครั้งเดียวหลัง Deploy Apps Script เพื่อให้ระบบอ่านและบันทึกข้อมูลจริง เช่น คอร์ส การเข้าสู่ระบบ การเริ่มเรียน ความก้าวหน้า และประวัติสนทนา AI ผู้เรียนทั่วไปไม่ต้องตั้งค่านี้</p><form id="settingsForm" class="settings-form"><input id="appsScriptUrl" class="input" placeholder="https://script.google.com/macros/s/.../exec" /><button class="btn primary" type="submit">เชื่อมต่อหลังบ้าน</button><button class="btn" type="button" id="setupSheetButton">สร้างตารางและข้อมูลตั้งต้น</button><span id="settingsStatus" class="muted small">ยังไม่ได้ทดสอบการเชื่อมต่อหลังบ้าน</span></form></div>
+      <div class="panel"><h3>ข้อมูลที่เก็บใน Google Sheet</h3><ul class="list"><li class="row">รายชื่อผู้เรียนและ Login logs <strong>users</strong></li><li class="row">คลังคอร์ส วิดีโอ และบทเรียน <strong>courses</strong></li><li class="row">ความก้าวหน้าเริ่มที่ <strong>0%</strong></li><li class="row">ประวัติสนทนา AI <strong>chat_logs</strong></li><li class="row">Prompt / Community / Badge <strong>พร้อมใช้</strong></li><li class="row">จำนวนคอร์สตั้งต้น <strong>${catalogCourses().length}</strong></li></ul></div>
     </section>`;
 }
 
@@ -567,13 +604,130 @@ function bindLoginForm() {
   });
 }
 
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;",
+  })[char]);
+}
+
 function aiReply(message) {
   const text = message.toLowerCase();
-  if (text.includes("prompt")) return "ลองใช้โครงสร้างนี้ครับ: บทบาท + งานที่ต้องการ + ข้อมูลอ้างอิง + รูปแบบผลลัพธ์ เช่น 'คุณคือผู้ช่วยงานธุรการ ช่วยสรุปรายงานประชุมนี้เป็นมติ งานติดตาม และผู้รับผิดชอบ'";
-  if (text.includes("สรุป") || text.includes("ประชุม")) return "ส่งข้อความหรือรายงานประชุมมาได้เลยครับ ผมจะช่วยจัดเป็นหัวข้อ: ประเด็นสำคัญ, มติที่ประชุม, งานที่ต้องติดตาม, ผู้รับผิดชอบ และกำหนดส่ง";
-  if (text.includes("excel") || text.includes("ข้อมูล")) return "สำหรับงานข้อมูล แนะนำเริ่มจากตรวจหัวตาราง ลบข้อมูลซ้ำ สรุปด้วย PivotTable แล้วใช้ AI ช่วยอธิบาย insight จากตารางครับ";
-  if (text.includes("เรียน") || text.includes("คอร์ส")) return "ตอนนี้คุณสามารถไปหน้า Courses แล้วกดเริ่มเรียนได้เลย ระบบจะเพิ่มคอร์สเข้า My Learning และบันทึกความก้าวหน้าในเครื่องนี้ครับ";
-  return "ได้ครับ ผมช่วยได้ทั้งร่างข้อความ สรุปเอกสาร วางแผนงาน ทำ Prompt และแนะนำคอร์ส ลองบอกงานที่ต้องการให้ช่วยแบบละเอียดอีกนิดได้เลยครับ";
+  const has = (...keywords) => keywords.some((keyword) => text.includes(keyword));
+  const courseSuggestions = catalogCourses().slice(0, 4).map((course, index) => `${index + 1}. ${course.title} (${course.category})`).join("\n");
+
+  if (has("แผนรายสัปดาห์", "รายสัปดาห์", "สัปดาห์", "weekly", "วางแผน")) {
+    return `ได้ครับ นี่คือแผนรายสัปดาห์สำหรับบุคลากรสายสนับสนุนที่ต้องพัฒนาทักษะดิจิทัลและ AI โดยเริ่มจาก 0:
+
+วันจันทร์: Pre-test Digital Skills และ AI Readiness Check เพื่อรู้ระดับเริ่มต้น
+วันอังคาร: เรียนคอร์สพื้นฐานดิจิทัล 30-45 นาที และจด Pain Point จากงานจริง 1 เรื่อง
+วันพุธ: Workshop ใช้ AI ช่วยงานเอกสาร เช่น สรุปรายงานประชุมหรือร่างอีเมล
+วันพฤหัสบดี: ทำ Collaborative Task กับเพื่อนร่วมงาน เช่น แชร์ Prompt ที่ใช้ได้ผล
+วันศุกร์: Reflection สรุปว่า AI ช่วยลดเวลา/ลดข้อผิดพลาดตรงไหน และบันทึกลง Portfolio
+
+ผลลัพธ์ปลายสัปดาห์: มีคะแนนตั้งต้น, มี Pain Point ชัดเจน, มี Prompt ที่ใช้กับงานจริง 1 ชุด และมีหลักฐานการเรียนรู้ใน Portfolio`;
+  }
+  if (has("pain point", "ปัญหา", "ติดขัด", "วิเคราะห์ pain")) {
+    return `ได้ครับ แบบวิเคราะห์ Pain Point สำหรับงานสนับสนุนควรเก็บ 5 ช่องนี้:
+
+1. งานที่ทำบ่อย: เช่น ทำรายงานประชุม จัดตารางข้อมูล ตอบอีเมล
+2. จุดที่เสียเวลา: เช่น คัดลอกข้อมูลซ้ำ ตรวจคำผิด รวบรวมไฟล์
+3. ผลกระทบ: เช่น งานล่าช้า ข้อมูลคลาดเคลื่อน ผู้รับบริการรอนาน
+4. เครื่องมือที่ช่วยได้: Google Sheet, Excel, AI Assistant, Prompt Library
+5. ผลลัพธ์ที่คาดหวัง: ลดเวลา 20-30%, ลดข้อผิดพลาด, ทำรายงานได้เร็วขึ้น
+
+ถ้าต้องการ ผมช่วยแปลง Pain Point ของหน่วยงานเป็นแผนอบรมหรือ Project งานจริงให้ต่อได้ครับ`;
+  }
+  if (has("pre-test", "pretest", "ทดสอบก่อนเรียน", "readiness", "ความพร้อม")) {
+    return `ตัวอย่าง Pre-test และ AI Readiness Check:
+
+Digital Skills:
+1. จัดเก็บไฟล์บน Cloud ได้เป็นระบบหรือไม่
+2. ใช้ Google Sheet/Excel กรองข้อมูลและสรุปผลได้หรือไม่
+3. ใช้เครื่องมือประชุมออนไลน์และแชร์เอกสารร่วมกันได้หรือไม่
+
+AI Readiness:
+1. เข้าใจข้อจำกัดของ AI และไม่ส่งข้อมูลลับเข้าระบบหรือไม่
+2. เขียน Prompt ระบุบทบาท งาน ข้อมูล และรูปแบบผลลัพธ์ได้หรือไม่
+3. ตรวจทานคำตอบ AI ก่อนนำไปใช้จริงได้หรือไม่
+
+คะแนนควรเริ่มที่ 0 ในระบบจนกว่าผู้เรียนจะเริ่มทำแบบทดสอบหรือเริ่มคอร์สจริง`;
+  }
+  if (has("reflection", "สะท้อน", "หลังเรียน")) {
+    return `แบบ Reflection หลังเรียนที่ใช้ได้จริง:
+
+1. วันนี้เรียนรู้อะไรที่นำไปใช้กับงานได้ทันที
+2. งานเดิมที่เคยใช้เวลานาน ตอนนี้ AI ช่วยตรงไหนได้บ้าง
+3. ต้องระวังอะไรเมื่อใช้ AI กับข้อมูลขององค์กร
+4. Prompt หรือวิธีทำงานใดที่อยากแชร์ให้เพื่อนร่วมงาน
+5. สัปดาห์หน้าจะทดลองปรับปรุงงานใดเป็น Project ต่อเนื่อง`;
+  }
+  if (has("best practice", "แชร์", "community", "ชุมชน")) {
+    return `รูปแบบแชร์ Best Practice ใน Community:
+
+หัวข้อ: งานที่ปรับปรุงด้วย AI
+ปัญหาเดิม: อธิบายงานที่ใช้เวลาหรือผิดพลาดง่าย
+Prompt/เครื่องมือที่ใช้: ใส่ Prompt หรือขั้นตอน
+ผลลัพธ์: ก่อนใช้ใช้เวลากี่นาที หลังใช้เหลือกี่นาที
+ข้อควรระวัง: ข้อมูลลับ การตรวจทาน และความถูกต้อง
+
+โพสต์แบบนี้จะช่วยให้ชุมชนเรียนรู้ต่อกันได้ และนำไปเก็บเป็น Learning Portfolio ได้ครับ`;
+  }
+  if (has("feedback", "ข้อเสนอแนะ", "ประเมิน")) {
+    return `AI-assisted Feedback ควรตอบกลับแบบ 3 ส่วน:
+
+จุดแข็ง: สิ่งที่ผู้เรียนทำได้ดี เช่น Prompt ชัดเจนหรือสรุปงานครบ
+จุดที่ควรปรับ: เช่น ขาดบริบท ขาดผู้รับผิดชอบ หรือยังไม่ได้ตรวจข้อมูล
+ก้าวต่อไป: แนะนำคอร์ส/Prompt/Project ที่เหมาะกับ Pain Point ของผู้เรียน
+
+ถ้าส่งผลงานหรือข้อความมา ผมช่วยจัด feedback ตามกรอบนี้ให้ได้ทันทีครับ`;
+  }
+  if (has("prompt")) return `ลองใช้ Prompt นี้ได้เลยครับ:
+
+คุณคือผู้ช่วยงานสนับสนุนของมหาวิทยาลัย ช่วยฉันทำงานต่อไปนี้: [ระบุงาน]
+บริบทของงานคือ: [หน่วยงาน/กลุ่มผู้รับบริการ/ข้อจำกัด]
+ข้อมูลที่มีคือ: [วางข้อมูลหรือสรุปข้อมูล]
+ต้องการผลลัพธ์เป็น: [ตาราง/รายการ bullet/หนังสือราชการ/แผนงาน]
+เงื่อนไขสำคัญ: ใช้ภาษาไทยสุภาพ กระชับ ตรวจสอบความสมเหตุสมผล และระบุจุดที่ต้องให้มนุษย์ตรวจทาน`;
+  if (has("สรุป", "ประชุม", "รายงาน")) return `ส่งข้อความหรือรายงานประชุมมาได้เลยครับ ผมจะสรุปให้เป็น 5 หัวข้อ:
+
+1. ประเด็นสำคัญ
+2. มติหรือข้อสรุป
+3. งานที่ต้องติดตาม
+4. ผู้รับผิดชอบ
+5. กำหนดส่ง/กำหนดประชุมครั้งถัดไป
+
+ถ้ายังไม่มีต้นฉบับ ผมช่วยทำ Template รายงานประชุมให้ก่อนได้ครับ`;
+  if (has("excel", "ข้อมูล", "sheet", "ตาราง")) return `สำหรับงาน Excel/Google Sheet แนะนำลำดับทำงานนี้:
+
+1. ตรวจหัวตารางให้ชัด เช่น วันที่ หน่วยงาน ประเภทงาน สถานะ ผู้รับผิดชอบ
+2. ลบข้อมูลซ้ำและตรวจค่าว่าง
+3. สรุปด้วย PivotTable หรือ Filter
+4. ใช้ AI ช่วยอ่าน Insight เช่น งานประเภทไหนใช้เวลามากที่สุด
+5. นำผลไปทำ Dashboard หรือรายงานผู้บริหาร
+
+ถ้ามีชื่อตารางหรือคอลัมน์ ส่งมาได้ครับ ผมช่วยออกแบบโครงสร้างให้`;
+  if (has("เรียน", "คอร์ส", "แนะนำ")) return `คอร์สที่เหมาะสำหรับเริ่มจาก 0 มีดังนี้:
+
+${courseSuggestions}
+
+ให้เริ่มจากหน้า Courses แล้วกด "เริ่มเรียน" ระบบจะเพิ่มเข้า My Learning โดยความก้าวหน้าจะยังเป็น 0% จนกว่าผู้เรียนกดเรียนจบบทเรียนจริง`;
+  if (has("google sheet", "ชีต", "หลังบ้าน", "setting", "settings", "ตั้งค่า")) return `Google Sheet เป็นหลังบ้านของระบบครับ ไม่ใช่ขั้นตอนของผู้เรียนทั่วไป
+
+ผู้ดูแลระบบทำครั้งเดียว:
+1. Deploy Apps Script เป็น Web App
+2. วาง URL ในหน้า Settings
+3. กดสร้างตารางและข้อมูลตั้งต้น
+
+หลังจากนั้นระบบจะบันทึกข้อมูล เช่น login_logs, courses, progress และ chat_logs ลง Google Sheet เพื่อให้อาจารย์ตรวจหลังบ้านได้`;
+  return `ผมเข้าใจว่าต้องการให้ช่วยเรื่อง "${message}"
+
+คำแนะนำเบื้องต้น: ให้ระบุเป้าหมายงาน ข้อมูลที่มี รูปแบบผลลัพธ์ที่ต้องการ และข้อจำกัดของงานก่อน แล้วผมจะช่วยจัดเป็นแผน งานเอกสาร Prompt หรือแนวทางเรียนรู้ให้ตรงจุดมากขึ้นครับ
+
+ตัวอย่างที่พิมพ์ได้: "ช่วยทำแผนรายสัปดาห์", "วิเคราะห์ Pain Point งานเอกสาร", "ทำ Prompt สรุปรายงานประชุม", หรือ "แนะนำคอร์สเริ่มจาก 0"`;
 }
 
 function bindAiChat() {
@@ -584,7 +738,7 @@ function bindAiChat() {
 
   const history = JSON.parse(localStorage.getItem(CHAT_KEY) || '[{"role":"ai","text":"สวัสดีครับ วันนี้ให้ช่วยเรื่องงานหรือการเรียนรู้อะไรดีครับ"}]');
   const render = () => {
-    messages.innerHTML = history.map((item) => `<div class="bubble ${item.role === "user" ? "user" : ""}">${item.text}</div>`).join("");
+    messages.innerHTML = history.map((item) => `<div class="bubble ${item.role === "user" ? "user" : ""}">${escapeHtml(item.text)}</div>`).join("");
     messages.scrollTop = messages.scrollHeight;
   };
   render();

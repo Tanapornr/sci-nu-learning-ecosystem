@@ -444,6 +444,7 @@ body:not(.app-ready) .content {
   padding: 12px 14px;
   border-radius: 14px;
   background: #f2f4ff;
+  white-space: pre-line;
 }
 
 .bubble.user {
@@ -595,9 +596,59 @@ body:not(.app-ready) .content {
   padding-right: 4px;
 }
 
+.journey-flow {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.journey-step {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  min-height: 215px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at top right, rgba(96, 71, 238, .14), transparent 38%),
+    #fff;
+}
+
+.journey-index {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  color: #fff;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--brand), var(--cyan));
+}
+
+.journey-step h4 {
+  margin: 4px 0 8px;
+}
+
+.journey-step .pill {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+}
+
+.journey-items {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 10px;
+  padding-left: 18px;
+}
+
 @media (max-width: 1180px) {
   .grid-5 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .journey-flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .layout-main { grid-template-columns: 1fr; }
   .course-grid,
   .prompt-grid,
@@ -619,6 +670,7 @@ body:not(.app-ready) .content {
   .grid-3,
   .grid-4,
   .grid-5,
+  .journey-flow,
   .course-grid,
   .prompt-grid,
   .badge-grid,
