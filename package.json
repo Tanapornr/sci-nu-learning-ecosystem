@@ -1,9 +1,8 @@
-﻿{
+{
   "name": "sci-nu-learning-ecosystem",
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "vercel dev",
-    "start": "vercel dev"
+    "build": "node build.js"
   }
 }
