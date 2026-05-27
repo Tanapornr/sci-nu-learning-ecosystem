@@ -120,6 +120,8 @@ function route(action, params) {
     if (action === "badges") return ok(readObjects(SHEETS.badges));
     if (action === "community") return ok(readObjects(SHEETS.community));
     if (action === "tools") return ok(readObjects(SHEETS.tools));
+    if (action === "startcourse") return ok(startCourse(params.userId || "U001", params.courseId));
+    if (action === "updateprogress") return ok(updateProgress(params.userId || "U001", params.courseId, params.progress, params.status));
     if (action === "createactivity") return ok(appendObject(SHEETS.activities, params));
     if (action === "createcommunitypost") return ok(appendObject(SHEETS.community, params));
     return fail("Unknown action: " + action);
@@ -167,6 +169,46 @@ function getDashboard(userId) {
     badges,
     activities: activities.slice(0, 8),
   };
+}
+
+function startCourse(userId, courseId) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.courses);
+  if (!sheet) throw new Error("Missing sheet: courses");
+  const courses = readObjects(SHEETS.courses);
+  const catalog = courses.find((item) => item.courseId === courseId && !item.userId);
+  if (!catalog) throw new Error("Course not found: " + courseId);
+  const existing = courses.find((item) => item.courseId === courseId && item.userId === userId);
+  if (existing) return { enrolled: true, existing: true };
+  sheet.appendRow([
+    catalog.courseId,
+    userId,
+    catalog.title,
+    catalog.category,
+    "กำลังเรียน",
+    0,
+    catalog.hours,
+    catalog.level,
+  ]);
+  return { enrolled: true };
+}
+
+function updateProgress(userId, courseId, progress, status) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.courses);
+  if (!sheet) throw new Error("Missing sheet: courses");
+  const values = sheet.getDataRange().getDisplayValues();
+  const headers = values[0];
+  const idCol = headers.indexOf("courseId");
+  const userCol = headers.indexOf("userId");
+  const progressCol = headers.indexOf("progress");
+  const statusCol = headers.indexOf("status");
+  for (let row = 1; row < values.length; row += 1) {
+    if (values[row][idCol] === courseId && values[row][userCol] === userId) {
+      sheet.getRange(row + 1, progressCol + 1).setValue(progress);
+      sheet.getRange(row + 1, statusCol + 1).setValue(status || (Number(progress) >= 100 ? "เรียนจบแล้ว" : "กำลังเรียน"));
+      return { updated: true };
+    }
+  }
+  return { updated: false };
 }
 
 function readObjects(sheetName) {

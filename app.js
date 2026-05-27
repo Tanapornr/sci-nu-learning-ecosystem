@@ -3,6 +3,10 @@ const APP_CONFIG = {
   userId: localStorage.getItem("userId") || "U001",
 };
 
+const AUTH_KEY = "sciNuUser";
+const ENROLLMENT_KEY = "sciNuEnrollments";
+const CHAT_KEY = "sciNuChat";
+
 const thaiDate = new Intl.DateTimeFormat("th-TH", {
   day: "numeric",
   month: "long",
@@ -65,6 +69,34 @@ const DEFAULT_DATA = {
 
 let appData = structuredClone(DEFAULT_DATA);
 
+const COURSE_LESSONS = {
+  C001: [
+    { title: "Digital Literacy คืออะไร", duration: "12 นาที", query: "ทักษะดิจิทัลพื้นฐาน สำหรับการทำงาน" },
+    { title: "การจัดการไฟล์และข้อมูลอย่างเป็นระบบ", duration: "18 นาที", query: "การจัดการไฟล์ Google Drive สำหรับทำงาน" },
+    { title: "แบบทดสอบหลังเรียน", duration: "5 นาที", query: "digital literacy quiz thai" },
+  ],
+  C002: [
+    { title: "Google Drive และ Docs สำหรับทีม", duration: "20 นาที", query: "Google Workspace สอนใช้งาน ภาษาไทย" },
+    { title: "Google Sheet สำหรับงานติดตาม", duration: "22 นาที", query: "สอน Google Sheets พื้นฐาน ภาษาไทย" },
+  ],
+  C003: [
+    { title: "Excel พื้นฐานสำหรับงานธุรการ", duration: "25 นาที", query: "Excel พื้นฐาน งานธุรการ ภาษาไทย" },
+    { title: "PivotTable และการสรุปข้อมูล", duration: "30 นาที", query: "สอน PivotTable Excel ภาษาไทย" },
+  ],
+  C004: [
+    { title: "หลักการจัดเอกสารดิจิทัล", duration: "15 นาที", query: "การจัดการเอกสารดิจิทัล" },
+    { title: "Workflow e-Document", duration: "18 นาที", query: "ระบบ e document การทำงานเอกสาร" },
+  ],
+  C005: [
+    { title: "AI Literacy สำหรับผู้เริ่มต้น", duration: "20 นาที", query: "AI Literacy ภาษาไทย" },
+    { title: "ข้อควรระวังและจริยธรรมการใช้ AI", duration: "18 นาที", query: "จริยธรรมการใช้ AI ภาษาไทย" },
+  ],
+  C006: [
+    { title: "โครงสร้าง Prompt ที่ดี", duration: "18 นาที", query: "Prompt Engineering ภาษาไทย" },
+    { title: "Prompt สำหรับงานสำนักงาน", duration: "20 นาที", query: "เขียน prompt สำหรับงานเอกสาร" },
+  ],
+};
+
 const pageMeta = {
   "dashboard.html": ["Dashboard", "ภาพรวมการเรียนรู้ ทักษะงาน และการใช้ AI ของคุณ"],
   "mylearning.html": ["My Learning", "พื้นที่ติดตามคอร์ส บทเรียน และเส้นทางการเรียนรู้ส่วนตัว"],
@@ -83,7 +115,16 @@ const statusDone = "เรียนจบแล้ว";
 const statusLearning = "กำลังเรียน";
 
 function currentUser() {
-  return appData.users.find((user) => user.userId === APP_CONFIG.userId) || DEFAULT_DATA.users[0];
+  const sessionUser = JSON.parse(localStorage.getItem(AUTH_KEY) || "null");
+  return sessionUser || appData.users.find((user) => user.userId === APP_CONFIG.userId) || DEFAULT_DATA.users[0];
+}
+
+function storedEnrollments() {
+  return JSON.parse(localStorage.getItem(ENROLLMENT_KEY) || "[]");
+}
+
+function saveEnrollments(items) {
+  localStorage.setItem(ENROLLMENT_KEY, JSON.stringify(items));
 }
 
 function numberValue(value) {
@@ -96,7 +137,10 @@ function catalogCourses() {
 }
 
 function userEnrollments() {
-  return appData.courses.filter((course) => course.userId === APP_CONFIG.userId);
+  const remote = appData.courses.filter((course) => course.userId === APP_CONFIG.userId);
+  const local = storedEnrollments();
+  const byId = new Map([...remote, ...local].map((course) => [course.courseId, course]));
+  return [...byId.values()];
 }
 
 function stats() {
@@ -168,6 +212,13 @@ async function loadSheetData(action) {
   }
 }
 
+function sendSheetAction(action, params = {}) {
+  if (!APP_CONFIG.appsScriptUrl) return;
+  jsonp(APP_CONFIG.appsScriptUrl, { action, userId: APP_CONFIG.userId, ...params }).catch((err) => {
+    console.warn(err.message);
+  });
+}
+
 function withDefaults(data) {
   if (!data) return structuredClone(DEFAULT_DATA);
   return {
@@ -211,7 +262,9 @@ function courseCard(course, showAction = false) {
   const progress = numberValue(course.progress);
   const status = course.userId ? course.status || "ยังไม่เริ่ม" : course.status || "เปิดลงทะเบียน";
   const tone = status === statusDone ? "green" : status === statusLearning ? "blue" : "amber";
-  const action = showAction ? `<button class="btn primary" type="button">เริ่มเรียน</button>` : "";
+  const action = showAction
+    ? `<button class="btn primary" type="button" data-start-course="${course.courseId}">เริ่มเรียน</button>`
+    : `<a class="btn" href="learn.html?course=${course.courseId}">ไปเรียน</a>`;
   return `<div class="card course-card"><div class="row-main"><div class="thumb">📘</div><div><h4>${course.title || "ไม่มีชื่อคอร์ส"}</h4><span class="pill ${tone}">${status}</span></div></div>${progressBar(progress)}<div class="row"><span class="muted small">${course.category || "ทั่วไป"} | ${course.level || "พื้นฐาน"} | ${course.hours || 0} ชม.</span><strong>${progress}%</strong></div>${action}</div>`;
 }
 
@@ -314,7 +367,7 @@ function renderAiAssistant() {
   return `${header("aiasistant.html")}
     <section class="hero"><h2>SCI NU AI Assistant</h2><p>พร้อมช่วยงานเอกสาร สรุปข้อมูล ร่างข้อความ และออกแบบ Prompt สำหรับงานสนับสนุน โดยไม่บันทึกเป็นความก้าวหน้าการเรียนจนกว่าคุณจะเริ่มคอร์สจริง</p></section>
     <section class="layout-main" style="margin-top:14px">
-      <div class="panel chat"><div class="bubble">สวัสดีครับ วันนี้ให้ช่วยเรื่องงานหรือการเรียนรู้อะไรดีครับ</div><div class="chat-input"><input class="input" style="flex:1" placeholder="พิมพ์คำถามหรือวางข้อความที่ต้องการให้ AI ช่วย..." /><button class="btn primary">ส่ง</button></div></div>
+      <div class="panel chat"><div id="chatMessages" class="chat-messages"></div><form id="aiChatForm" class="chat-input"><input id="aiChatInput" class="input" style="flex:1" placeholder="พิมพ์คำถามหรือวางข้อความที่ต้องการให้ AI ช่วย..." /><button class="btn primary" type="submit">ส่ง</button></form></div>
       <aside class="stack">${panel("เครื่องมือ AI และ Prompt แนะนำ", promptGrid(appData.prompts, "ยังไม่มี Prompt/เครื่องมือที่บันทึกไว้", "เพิ่มข้อมูลในชีต prompts เพื่อแสดงเครื่องมือหรือ Prompt ที่องค์กรอนุมัติ"))}</aside>
     </section>`;
 }
@@ -385,7 +438,33 @@ function renderSettings() {
     </section>`;
 }
 
+function renderLogin() {
+  return `<main class="login-page"><section class="login-card"><div class="brand login-brand"><span class="brand-mark">AI</span><div>SCI NU<small>Learning Ecosystem</small></div></div><h1>เข้าสู่ระบบการเรียนรู้</h1><p class="muted">สำหรับบุคลากรสายสนับสนุน เพื่อพัฒนาทักษะดิจิทัล การทำงาน และการใช้ AI</p><form id="loginForm" class="settings-form"><input id="loginName" class="input" placeholder="ชื่อ-นามสกุล" required /><input id="loginPosition" class="input" placeholder="ตำแหน่ง / หน่วยงาน" value="บุคลากรสายสนับสนุน" /><button class="btn primary" type="submit">เข้าสู่ระบบ</button></form></section></main>`;
+}
+
+function renderLearn() {
+  const params = new URLSearchParams(window.location.search);
+  const courseId = params.get("course");
+  const enrollment = userEnrollments().find((item) => item.courseId === courseId);
+  const course = enrollment || catalogCourses().find((item) => item.courseId === courseId) || catalogCourses()[0];
+  const lessons = COURSE_LESSONS[course.courseId] || [
+    { title: `บทนำ: ${course.title}`, duration: "15 นาที", query: `${course.title} ภาษาไทย` },
+    { title: "แนวทางประยุกต์ใช้กับงานจริง", duration: "20 นาที", query: `${course.category} สำหรับการทำงาน` },
+  ];
+  const firstQuery = encodeURIComponent(lessons[0].query);
+  return `${header("learn.html")}
+    <section class="layout-main">
+      <div class="stack">
+        <div class="panel"><div class="panel-head"><h3>${course.title}</h3><span class="pill">${course.progress || 0}%</span></div><div class="video-frame"><iframe title="learning video" src="https://www.youtube.com/embed?listType=search&list=${firstQuery}" allowfullscreen></iframe></div><p class="muted">ระบบเปิดวิดีโอจากคำค้นที่ตรงกับบทเรียน หากต้องการใช้วิดีโอขององค์กร ให้ใส่ YouTube embed URL ใน Google Sheet เพิ่มภายหลังได้</p></div>
+        ${panel("บทเรียน", `<ul class="list">${lessons.map((lesson, index) => `<li class="row"><span>${index + 1}. ${lesson.title}</span><span class="pill">${lesson.duration}</span></li>`).join("")}</ul>`)}
+      </div>
+      <aside class="stack">${panel("ความก้าวหน้าคอร์สนี้", `${progressBar(course.progress || 0)}<p class="muted">กดปุ่มด้านล่างเพื่อจำลองการเรียนจบบทเรียน ระบบจะบันทึกในเครื่องผู้ใช้ทันที</p><button class="btn primary" type="button" data-complete-lesson="${course.courseId}">เรียนจบบทเรียนนี้</button>`)}${panel("เครื่องมือช่วยเรียน", `<a class="btn" href="aiasistant.html">ถาม AI Assistant</a><a class="btn" href="mylearning.html">กลับไปคอร์สของฉัน</a>`)}</aside>
+    </section>`;
+}
+
 const renderers = {
+  "login.html": renderLogin,
+  "learn.html": renderLearn,
   "dashboard.html": renderDashboard,
   "mylearning.html": renderMyLearning,
   "courses.html": renderCourses,
@@ -418,14 +497,129 @@ function bindSettingsForm() {
   });
 }
 
+function startCourse(courseId) {
+  const course = catalogCourses().find((item) => item.courseId === courseId);
+  if (!course) return;
+  const enrollments = storedEnrollments();
+  if (!enrollments.some((item) => item.courseId === courseId)) {
+    enrollments.push({ ...course, userId: APP_CONFIG.userId, status: statusLearning, progress: 0, startedAt: new Date().toISOString() });
+    saveEnrollments(enrollments);
+    sendSheetAction("startCourse", { courseId });
+  }
+  window.location.href = `learn.html?course=${encodeURIComponent(courseId)}`;
+}
+
+function completeLesson(courseId) {
+  const enrollments = storedEnrollments();
+  const index = enrollments.findIndex((item) => item.courseId === courseId);
+  if (index === -1) {
+    startCourse(courseId);
+    return;
+  }
+  const current = numberValue(enrollments[index].progress);
+  const next = Math.min(100, current + 34);
+  enrollments[index].progress = next;
+  enrollments[index].status = next >= 100 ? statusDone : statusLearning;
+  if (next >= 100) enrollments[index].completedAt = new Date().toISOString();
+  saveEnrollments(enrollments);
+  sendSheetAction("updateProgress", { courseId, progress: next, status: enrollments[index].status });
+  window.location.reload();
+}
+
+function bindLearningActions() {
+  document.querySelectorAll("[data-start-course]").forEach((button) => {
+    button.addEventListener("click", () => startCourse(button.dataset.startCourse));
+  });
+  document.querySelectorAll("[data-complete-lesson]").forEach((button) => {
+    button.addEventListener("click", () => completeLesson(button.dataset.completeLesson));
+  });
+}
+
+function bindLoginForm() {
+  const form = document.getElementById("loginForm");
+  if (!form) return;
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const user = {
+      userId: APP_CONFIG.userId,
+      name: document.getElementById("loginName").value.trim(),
+      position: document.getElementById("loginPosition").value.trim() || "บุคลากรสายสนับสนุน",
+      progress: 0,
+      score: 0,
+    };
+    localStorage.setItem(AUTH_KEY, JSON.stringify(user));
+    window.location.href = "dashboard.html";
+  });
+}
+
+function aiReply(message) {
+  const text = message.toLowerCase();
+  if (text.includes("prompt")) return "ลองใช้โครงสร้างนี้ครับ: บทบาท + งานที่ต้องการ + ข้อมูลอ้างอิง + รูปแบบผลลัพธ์ เช่น 'คุณคือผู้ช่วยงานธุรการ ช่วยสรุปรายงานประชุมนี้เป็นมติ งานติดตาม และผู้รับผิดชอบ'";
+  if (text.includes("สรุป") || text.includes("ประชุม")) return "ส่งข้อความหรือรายงานประชุมมาได้เลยครับ ผมจะช่วยจัดเป็นหัวข้อ: ประเด็นสำคัญ, มติที่ประชุม, งานที่ต้องติดตาม, ผู้รับผิดชอบ และกำหนดส่ง";
+  if (text.includes("excel") || text.includes("ข้อมูล")) return "สำหรับงานข้อมูล แนะนำเริ่มจากตรวจหัวตาราง ลบข้อมูลซ้ำ สรุปด้วย PivotTable แล้วใช้ AI ช่วยอธิบาย insight จากตารางครับ";
+  if (text.includes("เรียน") || text.includes("คอร์ส")) return "ตอนนี้คุณสามารถไปหน้า Courses แล้วกดเริ่มเรียนได้เลย ระบบจะเพิ่มคอร์สเข้า My Learning และบันทึกความก้าวหน้าในเครื่องนี้ครับ";
+  return "ได้ครับ ผมช่วยได้ทั้งร่างข้อความ สรุปเอกสาร วางแผนงาน ทำ Prompt และแนะนำคอร์ส ลองบอกงานที่ต้องการให้ช่วยแบบละเอียดอีกนิดได้เลยครับ";
+}
+
+function bindAiChat() {
+  const form = document.getElementById("aiChatForm");
+  const input = document.getElementById("aiChatInput");
+  const messages = document.getElementById("chatMessages");
+  if (!form || !input || !messages) return;
+
+  const history = JSON.parse(localStorage.getItem(CHAT_KEY) || '[{"role":"ai","text":"สวัสดีครับ วันนี้ให้ช่วยเรื่องงานหรือการเรียนรู้อะไรดีครับ"}]');
+  const render = () => {
+    messages.innerHTML = history.map((item) => `<div class="bubble ${item.role === "user" ? "user" : ""}">${item.text}</div>`).join("");
+    messages.scrollTop = messages.scrollHeight;
+  };
+  render();
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const text = input.value.trim();
+    if (!text) return;
+    history.push({ role: "user", text });
+    history.push({ role: "ai", text: aiReply(text) });
+    localStorage.setItem(CHAT_KEY, JSON.stringify(history));
+    input.value = "";
+    render();
+  });
+}
+
+function bindSessionUi() {
+  const user = currentUser();
+  document.querySelectorAll(".profile").forEach((node) => {
+    node.innerHTML = `${user.name}<br><span class="muted">${user.position || "บุคลากรสายสนับสนุน"}</span><div style="margin-top:10px"><button class="btn" type="button" data-logout>ออกจากระบบ</button></div>`;
+  });
+  document.querySelectorAll("[data-logout]").forEach((button) => {
+    button.addEventListener("click", () => {
+      localStorage.removeItem(AUTH_KEY);
+      window.location.href = "login.html";
+    });
+  });
+}
+
 async function renderCurrentPage() {
   await hydrateData();
   const file = window.location.pathname.split("/").pop() || "dashboard.html";
+  const isLogin = file === "login.html";
+  if (!isLogin && !localStorage.getItem(AUTH_KEY)) {
+    window.location.href = "login.html";
+    return;
+  }
   const renderer = renderers[file] || renderDashboard;
   const content = document.querySelector(".content");
-  if (content) content.innerHTML = renderer();
+  if (isLogin) {
+    document.body.innerHTML = renderer();
+  } else if (content) {
+    content.innerHTML = renderer();
+  }
   document.body.classList.add("app-ready");
   bindSettingsForm();
+  bindLoginForm();
+  bindLearningActions();
+  bindAiChat();
+  bindSessionUi();
 }
 
 document.addEventListener("DOMContentLoaded", renderCurrentPage);

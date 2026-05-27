@@ -5,6 +5,7 @@ const root = __dirname;
 const outDir = path.join(root, "public");
 const files = [
   "index.html",
+  "login.html",
   "dashboard.html",
   "mylearning.html",
   "courses.html",
@@ -15,6 +16,7 @@ const files = [
   "analytics.html",
   "portfolio.html",
   "badge.html",
+  "learn.html",
   "settings.html",
   "styles.css",
   "app.js",
