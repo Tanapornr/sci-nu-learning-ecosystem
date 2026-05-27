@@ -1,0 +1,47 @@
+﻿<!doctype html>
+<html lang='th'>
+<head>
+  <meta charset='UTF-8' />
+  <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+  <title>Settings | SCI NU</title>
+  <link rel='stylesheet' href='styles.css' />
+</head>
+<body>
+  <div class='app'>
+    <aside class='sidebar'>
+      <div class='brand'>SCI NU<small>Learning Ecosystem</small></div>
+      <nav class='menu'><a class='' href='dashboard.html'>Dashboard</a>
+<a class='' href='mylearning.html'>My Learning</a>
+<a class='' href='courses.html'>Courses</a>
+<a class='' href='aiasistant.html'>AI Assistant</a>
+<a class='' href='promptlibrary.html'>Prompt Library</a>
+<a class='' href='community.html'>Community</a>
+<a class='' href='workplace.html'>Workplace Tools</a>
+<a class='' href='analytics.html'>Analytics</a>
+<a class='' href='portfolio.html'>My Portfolio</a>
+<a class='' href='badge.html'>Badge & Achievement</a>
+<a class='active' href='settings.html'>Settings</a></nav>
+      <div class='profile'>น.ส. วารุณี จันทร์ดี<br/><span class='muted'>เจ้าหน้าที่บริหารงานทั่วไป</span></div>
+    </aside>
+    <main class='content'>
+      <div class='topbar'>
+        <div>
+          <h1 style='margin:0'>Settings</h1>
+          <small class='muted'>ระบบนิเวศการเรียนรู้ดิจิทัลเพื่อพัฒนาทักษะการทำงานและ AI</small>
+        </div>
+        <input class='search' placeholder='ค้นหา...'/>
+      </div>
+      <div class='card'>
+  <h3>การเชื่อมต่อ Google Sheet (Apps Script)</h3>
+  <p class='muted'>วาง URL Web App ของ Apps Script เพื่อให้ทุกหน้าดึงข้อมูลจริงได้</p>
+  <form id='settingsForm'>
+    <input id='appsScriptUrl' class='search' style='width:100%;max-width:none' placeholder='https://script.google.com/macros/s/.../exec' />
+    <div style='margin-top:10px'><button class='cta' type='submit'>บันทึกการตั้งค่า</button></div>
+  </form>
+</div>
+
+    </main>
+  </div>
+  <script src='app.js'></script>
+</body>
+</html>
