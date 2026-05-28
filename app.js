@@ -1,6 +1,6 @@
 const APP_CONFIG = {
   appsScriptUrl: localStorage.getItem("appsScriptUrl") || "",
-  userId: localStorage.getItem("userId") || "U001",
+  userId: localStorage.getItem("userId") || "NU-001",
 };
 
 const AUTH_KEY = "sciNuUser";
@@ -15,7 +15,7 @@ const thaiDate = new Intl.DateTimeFormat("th-TH", {
 
 const DEFAULT_DATA = {
   users: [
-    { userId: "U001", name: "ผู้เรียนใหม่", position: "บุคลากรสายสนับสนุน", progress: 0, score: 0 },
+    { id: "NU-001", username: "staff01", password: "", name: "นางสาวสมหญิง รักงาน", department: "งานธุรการ", role: "staff", preScore: 0, postScore: "", progress: 0, accessCount: 0, lastLogin: "", lessonProgress: "", reflection: "", reflectionUpdatedAt: "" },
   ],
   courses: [
     { courseId: "C001", title: "ทักษะดิจิทัลพื้นฐานสำหรับบุคลากรสายสนับสนุน", category: "ทักษะดิจิทัล", status: "เปิดลงทะเบียน", progress: 0, hours: 3, level: "พื้นฐาน", videoId: "aircAruvnKk", videoUrl: "https://www.youtube.com/watch?v=aircAruvnKk" },
@@ -116,7 +116,7 @@ const statusLearning = "กำลังเรียน";
 
 function currentUser() {
   const sessionUser = JSON.parse(localStorage.getItem(AUTH_KEY) || "null");
-  return sessionUser || appData.users.find((user) => user.userId === APP_CONFIG.userId) || DEFAULT_DATA.users[0];
+  return sessionUser || appData.users.find((user) => (user.id || user.userId) === APP_CONFIG.userId) || DEFAULT_DATA.users[0];
 }
 
 function storedEnrollments() {
@@ -156,7 +156,7 @@ function stats() {
     notStartedCourses: catalogCourses().length,
     hours: completed.reduce((sum, course) => sum + numberValue(course.hours), 0),
     progress: enrollments.length ? Math.round((completed.length / enrollments.length) * 100) : 0,
-    score: numberValue(currentUser().score),
+    score: numberValue(currentUser().postScore || currentUser().preScore || currentUser().score),
     badges: earnedBadges.length,
     prompts: appData.prompts.length,
     promptUses: appData.prompts.reduce((sum, item) => sum + numberValue(item.uses), 0),
@@ -486,7 +486,7 @@ function renderSettings() {
 }
 
 function renderLogin() {
-  return `<main class="login-page"><section class="login-card"><div class="brand login-brand"><span class="brand-mark">AI</span><div>SCI NU<small>Learning Ecosystem</small></div></div><h1>เข้าสู่ระบบการเรียนรู้</h1><p class="muted">สำหรับบุคลากรสายสนับสนุน เพื่อพัฒนาทักษะดิจิทัล การทำงาน และการใช้ AI</p><form id="loginForm" class="settings-form"><input id="loginName" class="input" placeholder="ชื่อ-นามสกุล" required /><input id="loginPosition" class="input" placeholder="ตำแหน่ง / หน่วยงาน" value="บุคลากรสายสนับสนุน" /><button class="btn primary" type="submit">เข้าสู่ระบบ</button></form></section></main>`;
+  return `<main class="login-page"><section class="login-card"><div class="brand login-brand"><span class="brand-mark">AI</span><div>SCI NU<small>Learning Ecosystem</small></div></div><h1>เข้าสู่ระบบการเรียนรู้</h1><p class="muted">เข้าสู่ระบบด้วยบัญชีบุคลากรจาก Google Sheet เช่น staff01 หรือ staff02 เพื่อให้ระบบบันทึก accessCount, lastLogin และความก้าวหน้าได้ถูกคน</p><form id="loginForm" class="settings-form"><input id="loginUsername" class="input" placeholder="Username เช่น staff01" autocomplete="username" required /><input id="loginPassword" class="input" type="password" placeholder="Password เช่น 1234" autocomplete="current-password" /><button class="btn primary" type="submit">เข้าสู่ระบบ</button><span id="loginStatus" class="muted small">ผู้ใช้ตัวอย่าง: staff01 ไม่ต้องใส่รหัสผ่าน, staff02-staff28 ใช้รหัสผ่าน 1234</span></form></section></main>`;
 }
 
 function renderLearn() {
@@ -586,21 +586,55 @@ function bindLearningActions() {
   });
 }
 
+async function loginWithSheet(username, password) {
+  if (!APP_CONFIG.appsScriptUrl) return null;
+  const result = await jsonp(APP_CONFIG.appsScriptUrl, { action: "login", username, password });
+  return result && result.success ? result.data : null;
+}
+
+function localLogin(username, password) {
+  const user = appData.users.find((item) => String(item.username || "").toLowerCase() === username.toLowerCase());
+  if (!user) return null;
+  if (String(user.password || "") !== String(password || "")) return null;
+  const safeUser = { ...user };
+  delete safeUser.password;
+  return safeUser;
+}
+
+function saveSessionUser(user) {
+  const userId = user.id || user.userId || APP_CONFIG.userId;
+  APP_CONFIG.userId = userId;
+  localStorage.setItem("userId", userId);
+  localStorage.setItem(AUTH_KEY, JSON.stringify({ ...user, userId, id: userId }));
+}
+
 function bindLoginForm() {
   const form = document.getElementById("loginForm");
   if (!form) return;
-  form.addEventListener("submit", (event) => {
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const user = {
-      userId: APP_CONFIG.userId,
-      name: document.getElementById("loginName").value.trim(),
-      position: document.getElementById("loginPosition").value.trim() || "บุคลากรสายสนับสนุน",
-      progress: 0,
-      score: 0,
-    };
-    localStorage.setItem(AUTH_KEY, JSON.stringify(user));
-    sendSheetAction("logLogin", { timestamp: new Date().toISOString(), name: user.name, position: user.position });
-    window.location.href = "dashboard.html";
+    const username = document.getElementById("loginUsername").value.trim();
+    const password = document.getElementById("loginPassword").value;
+    const status = document.getElementById("loginStatus");
+    status.textContent = "กำลังตรวจสอบบัญชีผู้ใช้...";
+    try {
+      const user = (await loginWithSheet(username, password)) || localLogin(username, password);
+      if (!user) {
+        status.textContent = "Username หรือ Password ไม่ถูกต้อง";
+        return;
+      }
+      saveSessionUser(user);
+      sendSheetAction("logLogin", { timestamp: new Date().toISOString(), userId: user.id || user.userId, username: user.username, name: user.name, position: user.department || user.position });
+      window.location.href = "dashboard.html";
+    } catch (err) {
+      const user = localLogin(username, password);
+      if (!user) {
+        status.textContent = "เชื่อมต่อ Google Sheet ไม่ได้ และไม่พบบัญชีนี้ในข้อมูลสำรอง";
+        return;
+      }
+      saveSessionUser(user);
+      window.location.href = "dashboard.html";
+    }
   });
 }
 
@@ -761,11 +795,12 @@ function bindAiChat() {
 function bindSessionUi() {
   const user = currentUser();
   document.querySelectorAll(".profile").forEach((node) => {
-    node.innerHTML = `${user.name}<br><span class="muted">${user.position || "บุคลากรสายสนับสนุน"}</span><div style="margin-top:10px"><button class="btn" type="button" data-logout>ออกจากระบบ</button></div>`;
+    node.innerHTML = `${user.name}<br><span class="muted">${user.department || user.position || "บุคลากรสายสนับสนุน"}</span><div style="margin-top:10px"><button class="btn" type="button" data-logout>ออกจากระบบ</button></div>`;
   });
   document.querySelectorAll("[data-logout]").forEach((button) => {
     button.addEventListener("click", () => {
       localStorage.removeItem(AUTH_KEY);
+      localStorage.removeItem("userId");
       window.location.href = "login.html";
     });
   });

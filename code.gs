@@ -1,4 +1,4 @@
-/**
+﻿/**
  * SCI NU Learning Ecosystem backend
  * Google Apps Script Web App connected to Google Sheet.
  *
@@ -18,20 +18,47 @@ const SHEETS = {
 };
 
 const HEADERS = {
-  users: ["userId", "name", "position", "progress", "score"],
+  users: ["id", "username", "password", "name", "department", "role", "preScore", "postScore", "progress", "accessCount", "lastLogin", "lessonProgress", "reflection", "reflectionUpdatedAt"],
   courses: ["courseId", "userId", "title", "category", "status", "progress", "hours", "level", "videoId", "videoUrl"],
   prompts: ["promptId", "title", "category", "uses"],
   activities: ["activityId", "title", "type", "date", "time"],
   badges: ["badgeId", "name", "description", "status", "earnedDate"],
   community: ["postId", "title", "type", "author", "createdAt"],
   tools: ["toolId", "title", "category", "uses", "url"],
-  login_logs: ["timestamp", "userId", "name", "position"],
+  login_logs: ["timestamp", "userId", "username", "name", "position"],
   chat_logs: ["timestamp", "userId", "role", "message"],
 };
 
 const SEED_DATA = {
   users: [
-    ["U001", "ผู้เรียนใหม่", "บุคลากรสายสนับสนุน", 0, 0],
+    ["NU-001", "staff01", "", "นางสาวสมหญิง รักงาน", "งานธุรการ", "staff", 0, "", 10, 38, "27 May 2026 17:41", "{\"L-866\":{\"started\":false,\"preDone\":true,\"videoDone\":true,\"postDone\":true,\"restoredFromProgress\":true},\"L-688\":{\"preStarted\":true,\"preDone\":true,\"preScore\":1,\"preTotal\":1,\"prePercent\":100,\"started\":true,\"videoPosition\":0}}", "", ""],
+    ["NU-002", "staff02", "1234", "นายเรียนดี ขยันยิ่ง", "โครงการ วมว.", "staff", "", "", "", 1, "27 May 2026 20:48", "", "", ""],
+    ["NU-003", "staff03", "1234", "นางสาวเบิกบาน ใจดี", "งานการเงินและพัสดุ", "staff", "", "", "", 0, "", "", "", ""],
+    ["NU-004", "staff04", "1234", "นายสมศักดิ์ มั่นคง", "งานธุรการ", "staff", "", "", "", 0, "", "", "", ""],
+    ["NU-005", "staff05", "1234", "นางสาวจิราพร ผ่องใส", "งานธุรการ", "staff", "", "", "", 0, "", "", "", ""],
+    ["NU-006", "staff06", "1234", "นายกิตติ สุขขี", "งานธุรการ", "staff", "", "", "", 0, "", "", "", ""],
+    ["NU-007", "staff07", "1234", "นางรจนา ยิ้มแย้ม", "งานธุรการ", "staff", "", "", "", 0, "", "", "", ""],
+    ["NU-008", "staff08", "1234", "นางสาวพรทิพย์ สว่างศรี", "งานธุรการ", "staff", "", "", "", 0, "", "", "", ""],
+    ["NU-009", "staff09", "1234", "นายวิชัย หาญกล้า", "งานธุรการ", "staff", "", "", "", 0, "", "", "", ""],
+    ["NU-010", "staff10", "1234", "นางสาวสุดา งามขำ", "งานธุรการ", "staff", "", "", "", 0, "", "", "", ""],
+    ["NU-011", "staff11", "1234", "นายทรงพล ใจบุญ", "งานธุรการ", "staff", "", "", "", 0, "", "", "", ""],
+    ["NU-012", "staff12", "1234", "นางสาววิไลลักษณ์ เจริญรุ่ง", "งานธุรการ", "staff", "", "", "", 0, "", "", "", ""],
+    ["NU-013", "staff13", "1234", "นายอำนาจ พิทักษ์ไทย", "งานการเงินและพัสดุ", "staff", "", "", "", 0, "", "", "", ""],
+    ["NU-014", "staff14", "1234", "นางสาวสุพรรษา รัตนกุล", "งานการเงินและพัสดุ", "staff", "", "", "", 0, "", "", "", ""],
+    ["NU-015", "staff15", "1234", "นางมณีรัตน์ แซ่ลี้", "งานการเงินและพัสดุ", "staff", "", "", "", 0, "", "", "", ""],
+    ["NU-016", "staff16", "1234", "นายพงษ์ศักดิ์ ศิริวัฒน์", "งานการเงินและพัสดุ", "staff", "", "", "", 0, "", "", "", ""],
+    ["NU-017", "staff17", "1234", "นางสาวรัตนาภรณ์ คงคา", "งานการเงินและพัสดุ", "staff", "", "", "", 0, "", "", "", ""],
+    ["NU-018", "staff18", "1234", "นายอภิชาติ สุวรรณมาโจ", "งานการเงินและพัสดุ", "staff", "", "", "", 0, "", "", "", ""],
+    ["NU-019", "staff19", "1234", "นางปราณี พูนทรัพย์", "งานการเงินและพัสดุ", "staff", "", "", "", 0, "", "", "", ""],
+    ["NU-020", "staff20", "1234", "นายชัยวัฒน์ เกียรติภิญโญ", "งานการเงินและพัสดุ", "staff", "", "", "", 0, "", "", "", ""],
+    ["NU-021", "staff21", "1234", "นางสาวนิรมล อมรพงษ์", "งานการเงินและพัสดุ", "staff", "", "", "", 0, "", "", "", ""],
+    ["NU-022", "staff22", "1234", "นายเอกพล สินเจริญ", "โครงการ วมว.", "staff", "", "", "", 0, "", "", "", ""],
+    ["NU-023", "staff23", "1234", "นางสาวณัฐริกา ดวงจันทร์", "โครงการ วมว.", "staff", "", "", "", 0, "", "", "", ""],
+    ["NU-024", "staff24", "1234", "นายปกรณ์ วงศ์สว่าง", "โครงการ วมว.", "staff", "", "", "", 0, "", "", "", ""],
+    ["NU-025", "staff25", "1234", "นางวิภาวดี ภัทรพงศ์", "โครงการ วมว.", "staff", "", "", "", 0, "", "", "", ""],
+    ["NU-026", "staff26", "1234", "นางสาวสุทธิดา ทรงธรรม", "โครงการ วมว.", "staff", "", "", "", 0, "", "", "", ""],
+    ["NU-027", "staff27", "1234", "นายธีรเดช มหามงคล", "โครงการ วมว.", "staff", "", "", "", 0, "", "", "", ""],
+    ["NU-028", "staff28", "1234", "นางศิริวรรณ ธรรมดี", "โครงการ วมว.", "staff", "", "", "", 0, "", "", "", ""],
   ],
   courses: [
     ["C001", "", "ทักษะดิจิทัลพื้นฐานสำหรับบุคลากรสายสนับสนุน", "ทักษะดิจิทัล", "เปิดลงทะเบียน", 0, 3, "พื้นฐาน", "aircAruvnKk", "https://www.youtube.com/watch?v=aircAruvnKk"],
@@ -124,15 +151,16 @@ function route(action, params) {
   try {
     if (action === "all") return ok(getAllData());
     if (action === "setup") return ok(setupDatabase());
-    if (action === "dashboard") return ok(getDashboard(params.userId || "U001"));
+    if (action === "login") return ok(loginUser(params.username, params.password));
+    if (action === "dashboard") return ok(getDashboard(params.userId || "NU-001"));
     if (action === "courses") return ok(readObjects(SHEETS.courses));
     if (action === "prompts") return ok(readObjects(SHEETS.prompts));
     if (action === "activities") return ok(readObjects(SHEETS.activities));
     if (action === "badges") return ok(readObjects(SHEETS.badges));
     if (action === "community") return ok(readObjects(SHEETS.community));
     if (action === "tools") return ok(readObjects(SHEETS.tools));
-    if (action === "startcourse") return ok(startCourse(params.userId || "U001", params.courseId));
-    if (action === "updateprogress") return ok(updateProgress(params.userId || "U001", params.courseId, params.progress, params.status));
+    if (action === "startcourse") return ok(startCourse(params.userId || "NU-001", params.courseId));
+    if (action === "updateprogress") return ok(updateProgress(params.userId || "NU-001", params.courseId, params.progress, params.status));
     if (action === "loglogin") return ok(appendObject("login_logs", params));
     if (action === "logchat") return ok(appendObject("chat_logs", params));
     if (action === "createactivity") return ok(appendObject(SHEETS.activities, params));
@@ -145,7 +173,7 @@ function route(action, params) {
 
 function getAllData() {
   return {
-    users: readObjects(SHEETS.users),
+    users: readObjects(SHEETS.users).map(sanitizeUser),
     courses: readObjects(SHEETS.courses),
     prompts: readObjects(SHEETS.prompts),
     activities: readObjects(SHEETS.activities),
@@ -155,12 +183,47 @@ function getAllData() {
   };
 }
 
+function sanitizeUser(user) {
+  const copy = Object.assign({}, user);
+  delete copy.password;
+  return copy;
+}
+
+function loginUser(username, password) {
+  const sheet = getDatabase().getSheetByName(SHEETS.users);
+  if (!sheet) throw new Error("Missing sheet: users");
+  const values = sheet.getDataRange().getDisplayValues();
+  const headers = values[0].map((header) => String(header).trim());
+  const usernameCol = headers.indexOf("username");
+  const passwordCol = headers.indexOf("password");
+  const accessCol = headers.indexOf("accessCount");
+  const lastLoginCol = headers.indexOf("lastLogin");
+  if (usernameCol === -1 || passwordCol === -1) throw new Error("users sheet must include username and password columns");
+
+  for (let row = 1; row < values.length; row += 1) {
+    const rowUsername = String(values[row][usernameCol] || "").trim();
+    const rowPassword = String(values[row][passwordCol] || "");
+    if (rowUsername.toLowerCase() === String(username || "").trim().toLowerCase() && rowPassword === String(password || "")) {
+      if (accessCol !== -1) sheet.getRange(row + 1, accessCol + 1).setValue(Number(values[row][accessCol] || 0) + 1);
+      if (lastLoginCol !== -1) sheet.getRange(row + 1, lastLoginCol + 1).setValue(new Date());
+      const user = {};
+      headers.forEach((header, index) => {
+        if (header !== "password") user[header] = values[row][index];
+      });
+      user.accessCount = accessCol !== -1 ? Number(values[row][accessCol] || 0) + 1 : user.accessCount;
+      user.lastLogin = new Date().toISOString();
+      return user;
+    }
+  }
+  throw new Error("Invalid username or password");
+}
+
 function getDashboard(userId) {
   const users = readObjects(SHEETS.users);
   const courses = readObjects(SHEETS.courses);
   const badges = readObjects(SHEETS.badges);
   const activities = readObjects(SHEETS.activities);
-  const user = users.find((item) => item.userId === userId) || users[0] || {};
+  const user = users.find((item) => item.id === userId || item.userId === userId) || users[0] || {};
   const enrollments = courses.filter((item) => item.userId === userId);
   const learning = enrollments.filter((item) => item.status === "กำลังเรียน");
   const completed = enrollments.filter((item) => item.status === "เรียนจบแล้ว");
@@ -174,7 +237,7 @@ function getDashboard(userId) {
       totalCourses: courses.filter((item) => !item.userId).length,
       hours: sum(completed, "hours"),
       progress: enrollments.length ? Math.round((completed.length / enrollments.length) * 100) : 0,
-      score: user.score || 0,
+      score: user.postScore || user.preScore || user.score || 0,
       badges: earnedBadges.length,
     },
     learning,
@@ -289,3 +352,4 @@ function output(payload, callback) {
     .createTextOutput(json)
     .setMimeType(ContentService.MimeType.JSON);
 }
+
