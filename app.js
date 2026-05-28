@@ -486,7 +486,7 @@ function renderSettings() {
 }
 
 function renderLogin() {
-  return `<main class="login-page"><section class="login-card"><div class="brand login-brand"><span class="brand-mark">AI</span><div>SCI NU<small>Learning Ecosystem</small></div></div><h1>เข้าสู่ระบบการเรียนรู้</h1><p class="muted">เข้าสู่ระบบด้วยบัญชีบุคลากรจาก Google Sheet เช่น staff01 หรือ staff02 เพื่อให้ระบบบันทึก accessCount, lastLogin และความก้าวหน้าได้ถูกคน</p><form id="loginForm" class="settings-form"><input id="loginWebAppUrl" class="input" placeholder="Apps Script Web App URL สำหรับเชื่อม Google Sheet" value="${APP_CONFIG.appsScriptUrl}" /><button class="btn" type="button" id="loginSetupSheetButton">สร้างข้อมูล users/courses ใน Google Sheet</button><input id="loginUsername" class="input" placeholder="Username เช่น staff01" autocomplete="username" required /><input id="loginPassword" class="input" type="password" placeholder="Password เช่น 1234" autocomplete="current-password" /><button class="btn primary" type="submit">เข้าสู่ระบบ</button><span id="loginStatus" class="muted small">ผู้ใช้ตัวอย่าง: staff01 ไม่ต้องใส่รหัสผ่าน, staff02-staff28 ใช้รหัสผ่าน 1234</span></form></section></main>`;
+  return `<main class="login-page"><section class="login-card"><div class="brand login-brand"><span class="brand-mark">AI</span><div>SCI NU<small>Learning Ecosystem</small></div></div><h1>เข้าสู่ระบบการเรียนรู้</h1><p class="muted">เข้าสู่ระบบด้วยบัญชีบุคลากร เพื่อบันทึกความก้าวหน้าและกิจกรรมการเรียนรู้ได้ถูกคน</p><form id="loginForm" class="settings-form"><input id="loginUsername" class="input" placeholder="Username เช่น staff01" autocomplete="username" required /><input id="loginPassword" class="input" type="password" placeholder="Password เช่น 1234" autocomplete="current-password" /><button class="btn primary" type="submit">เข้าสู่ระบบ</button><span id="loginStatus" class="muted small">ตัวอย่าง: staff02-staff80 ใช้รหัสผ่าน 1234, admin01 ใช้ admin123, boss01 ใช้ boss123</span></form></section></main>`;
 }
 
 function renderLearn() {
@@ -628,32 +628,9 @@ function saveSessionUser(user) {
 function bindLoginForm() {
   const form = document.getElementById("loginForm");
   if (!form) return;
-  const urlInput = document.getElementById("loginWebAppUrl");
   const status = document.getElementById("loginStatus");
-  const setupButton = document.getElementById("loginSetupSheetButton");
-  if (urlInput) {
-    urlInput.addEventListener("change", () => setAppsScriptUrl(urlInput.value.trim()));
-  }
-  if (setupButton) {
-    setupButton.addEventListener("click", async () => {
-      if (urlInput && urlInput.value.trim()) setAppsScriptUrl(urlInput.value.trim());
-      if (!APP_CONFIG.appsScriptUrl) {
-        status.textContent = "กรุณาวาง Apps Script Web App URL ก่อนสร้างข้อมูล";
-        return;
-      }
-      status.textContent = "กำลังสร้าง users/courses/prompts ใน Google Sheet...";
-      try {
-        const result = await jsonp(APP_CONFIG.appsScriptUrl, { action: "setup" });
-        status.textContent = result && result.success ? "สร้างข้อมูลตั้งต้นใน Google Sheet เรียบร้อยแล้ว ลองเข้าสู่ระบบได้เลย" : "สร้างข้อมูลไม่สำเร็จ โปรดตรวจ Deploy และสิทธิ์ Apps Script";
-        appData = withDefaults(await loadSheetData("all"));
-      } catch (err) {
-        status.textContent = "สร้างข้อมูลไม่สำเร็จ: " + err.message;
-      }
-    });
-  }
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    if (urlInput && urlInput.value.trim()) setAppsScriptUrl(urlInput.value.trim());
     const username = document.getElementById("loginUsername").value.trim();
     const password = document.getElementById("loginPassword").value;
     status.textContent = "กำลังตรวจสอบบัญชีผู้ใช้...";
