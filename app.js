@@ -486,7 +486,7 @@ function renderSettings() {
 }
 
 function renderLogin() {
-  return `<main class="login-page"><section class="login-card"><div class="brand login-brand"><span class="brand-mark">AI</span><div>SCI NU<small>Learning Ecosystem</small></div></div><h1>เข้าสู่ระบบการเรียนรู้</h1><p class="muted">เข้าสู่ระบบด้วยบัญชีบุคลากรจาก Google Sheet เช่น staff01 หรือ staff02 เพื่อให้ระบบบันทึก accessCount, lastLogin และความก้าวหน้าได้ถูกคน</p><form id="loginForm" class="settings-form"><input id="loginUsername" class="input" placeholder="Username เช่น staff01" autocomplete="username" required /><input id="loginPassword" class="input" type="password" placeholder="Password เช่น 1234" autocomplete="current-password" /><button class="btn primary" type="submit">เข้าสู่ระบบ</button><span id="loginStatus" class="muted small">ผู้ใช้ตัวอย่าง: staff01 ไม่ต้องใส่รหัสผ่าน, staff02-staff28 ใช้รหัสผ่าน 1234</span></form></section></main>`;
+  return `<main class="login-page"><section class="login-card"><div class="brand login-brand"><span class="brand-mark">AI</span><div>SCI NU<small>Learning Ecosystem</small></div></div><h1>เข้าสู่ระบบการเรียนรู้</h1><p class="muted">เข้าสู่ระบบด้วยบัญชีบุคลากรจาก Google Sheet เช่น staff01 หรือ staff02 เพื่อให้ระบบบันทึก accessCount, lastLogin และความก้าวหน้าได้ถูกคน</p><form id="loginForm" class="settings-form"><input id="loginWebAppUrl" class="input" placeholder="Apps Script Web App URL สำหรับเชื่อม Google Sheet" value="${APP_CONFIG.appsScriptUrl}" /><button class="btn" type="button" id="loginSetupSheetButton">สร้างข้อมูล users/courses ใน Google Sheet</button><input id="loginUsername" class="input" placeholder="Username เช่น staff01" autocomplete="username" required /><input id="loginPassword" class="input" type="password" placeholder="Password เช่น 1234" autocomplete="current-password" /><button class="btn primary" type="submit">เข้าสู่ระบบ</button><span id="loginStatus" class="muted small">ผู้ใช้ตัวอย่าง: staff01 ไม่ต้องใส่รหัสผ่าน, staff02-staff28 ใช้รหัสผ่าน 1234</span></form></section></main>`;
 }
 
 function renderLearn() {
@@ -601,6 +601,17 @@ function localLogin(username, password) {
   return safeUser;
 }
 
+function demoLogin(username, password) {
+  const match = String(username || "").trim().toLowerCase().match(/^staff(\d{2})$/);
+  if (!match) return null;
+  const number = Number(match[1]);
+  const validPassword = number === 1 ? String(password || "") === "" || String(password || "") === "1234" : String(password || "") === "1234";
+  if (!validPassword || number < 1 || number > 28) return null;
+  const id = `NU-${String(number).padStart(3, "0")}`;
+  const known = appData.users.find((item) => (item.id || item.userId) === id || String(item.username || "").toLowerCase() === username.toLowerCase());
+  return known || { id, userId: id, username, name: username, department: "บุคลากรสายสนับสนุน", role: "staff", preScore: 0, postScore: "", progress: 0, accessCount: 0, lastLogin: "" };
+}
+
 function saveSessionUser(user) {
   const userId = user.id || user.userId || APP_CONFIG.userId;
   APP_CONFIG.userId = userId;
@@ -611,23 +622,46 @@ function saveSessionUser(user) {
 function bindLoginForm() {
   const form = document.getElementById("loginForm");
   if (!form) return;
+  const urlInput = document.getElementById("loginWebAppUrl");
+  const status = document.getElementById("loginStatus");
+  const setupButton = document.getElementById("loginSetupSheetButton");
+  if (urlInput) {
+    urlInput.addEventListener("change", () => setAppsScriptUrl(urlInput.value.trim()));
+  }
+  if (setupButton) {
+    setupButton.addEventListener("click", async () => {
+      if (urlInput && urlInput.value.trim()) setAppsScriptUrl(urlInput.value.trim());
+      if (!APP_CONFIG.appsScriptUrl) {
+        status.textContent = "กรุณาวาง Apps Script Web App URL ก่อนสร้างข้อมูล";
+        return;
+      }
+      status.textContent = "กำลังสร้าง users/courses/prompts ใน Google Sheet...";
+      try {
+        const result = await jsonp(APP_CONFIG.appsScriptUrl, { action: "setup" });
+        status.textContent = result && result.success ? "สร้างข้อมูลตั้งต้นใน Google Sheet เรียบร้อยแล้ว ลองเข้าสู่ระบบได้เลย" : "สร้างข้อมูลไม่สำเร็จ โปรดตรวจ Deploy และสิทธิ์ Apps Script";
+        appData = withDefaults(await loadSheetData("all"));
+      } catch (err) {
+        status.textContent = "สร้างข้อมูลไม่สำเร็จ: " + err.message;
+      }
+    });
+  }
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
+    if (urlInput && urlInput.value.trim()) setAppsScriptUrl(urlInput.value.trim());
     const username = document.getElementById("loginUsername").value.trim();
     const password = document.getElementById("loginPassword").value;
-    const status = document.getElementById("loginStatus");
     status.textContent = "กำลังตรวจสอบบัญชีผู้ใช้...";
     try {
-      const user = (await loginWithSheet(username, password)) || localLogin(username, password);
+      const user = (await loginWithSheet(username, password)) || (!APP_CONFIG.appsScriptUrl ? localLogin(username, password) || demoLogin(username, password) : null);
       if (!user) {
-        status.textContent = "Username หรือ Password ไม่ถูกต้อง";
+        status.textContent = APP_CONFIG.appsScriptUrl ? "Username หรือ Password ไม่ถูกต้อง หรือ Google Sheet ยังไม่มีแท็บ users ให้กดสร้างข้อมูลตั้งต้นก่อน" : "Username หรือ Password ไม่ถูกต้อง";
         return;
       }
       saveSessionUser(user);
       sendSheetAction("logLogin", { timestamp: new Date().toISOString(), userId: user.id || user.userId, username: user.username, name: user.name, position: user.department || user.position });
       window.location.href = "dashboard.html";
     } catch (err) {
-      const user = localLogin(username, password);
+      const user = localLogin(username, password) || demoLogin(username, password);
       if (!user) {
         status.textContent = "เชื่อมต่อ Google Sheet ไม่ได้ และไม่พบบัญชีนี้ในข้อมูลสำรอง";
         return;
